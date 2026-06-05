@@ -18,6 +18,35 @@ subprojects {
 subprojects {
     project.evaluationDependsOn(":app")
 }
+subprojects {
+    val configureAndroidSubproject = {
+        extensions.findByName("android")?.let {
+            val android = it as? com.android.build.gradle.BaseExtension
+            if (android != null && android.namespace == null) {
+                android.namespace = "com.example.${project.name.replace("-", "_").replace(" ", "_")}"
+            }
+        }
+        tasks.matching { it.name.startsWith("process") && it.name.endsWith("Manifest") }.configureEach {
+            doFirst {
+                val manifestFile = file("${project.projectDir}/src/main/AndroidManifest.xml")
+                if (manifestFile.exists()) {
+                    var content = manifestFile.readText()
+                    val regex = Regex("""package="[^"]*"""")
+                    if (regex.containsMatchIn(content)) {
+                        content = content.replace(regex, "")
+                        manifestFile.writeText(content)
+                        println("Removed package attribute from ${manifestFile.path}")
+                    }
+                }
+            }
+        }
+    }
+    if (state.executed) {
+        configureAndroidSubproject()
+    } else {
+        afterEvaluate { configureAndroidSubproject() }
+    }
+}
 
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
