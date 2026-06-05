@@ -1,16 +1,6 @@
 import 'package:flutter/material.dart';
 
 
-class JoinExamScreen extends StatelessWidget {
-  const JoinExamScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Join Exam Screen')),
-    );
-  }
-}
 
 class ExamTakingScreen extends StatelessWidget {
   final String examId;
