@@ -1,10 +1,332 @@
 rules_version = '2';
 
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: users
+// Document ID: User Auth UID
+// Fields:
+//   - uid: string (required, User UID)
+//   - name: string (required, User full name, 1-100 chars)
+//   - email: string (required, User email address, valid format)
+//   - role: string (required, 'admin' | 'guru' | 'siswa')
+//   - createdAt: timestamp (required, creation date)
+//   - isActive: bool (required, whether account is active)
+//
+// Collection: exams
+// Document ID: Exam Auto-ID
+// Fields:
+//   - id: string (required, Exam ID)
+//   - title: string (required, 1-200 chars)
+//   - description: string (required, 0-1000 chars)
+//   - code: string (required, unique exam access code, 1-20 chars)
+//   - createdBy: string (required, UID of the guru who created it)
+//   - duration: int (required, duration in minutes, > 0)
+//   - startDate: timestamp (required, exam start window)
+//   - endDate: timestamp (required, exam end window)
+//   - isActive: bool (required, whether exam is visible to siswa)
+//   - shuffleQuestions: bool (required)
+//   - shuffleOptions: bool (required)
+//   - totalQuestions: int (required, total questions, >= 0)
+//
+// Collection: exams/{examId}/questions
+// Document ID: Question Auto-ID
+// Fields:
+//   - id: string (required, Question ID)
+//   - type: string (required, 'pg' | 'essay')
+//   - text: string (required, question content, 1-2000 chars)
+//   - options: list of strings (optional, required if pg, size 2-10)
+//   - correctAnswer: int (optional, required if pg, index of correct option)
+//   - essayGuideline: string (optional, scoring guideline, 0-2000 chars)
+//   - maxScore: number (required, maximum score for this question, > 0)
+//   - order: int (required, order rank, >= 0)
+//   - points: number (required, weight of points, > 0)
+//
+// Collection: exam_sessions
+// Document ID: Session Auto-ID
+// Fields:
+//   - id: string (required, Session ID)
+//   - examId: string (required, ID of exam)
+//   - userId: string (required, Student UID)
+//   - startedAt: timestamp (required, when siswa started)
+//   - endedAt: timestamp (optional, when siswa submitted/auto-submitted)
+//   - status: string (required, 'in_progress' | 'completed' | 'auto_submitted')
+//   - questionOrder: list of strings (required, list of question IDs, <= 100)
+//   - optionOrders: map of string -> list (required, shuffled option indices)
+//   - answers: map (required, student answers: questionId -> selectedIndex (int) or essayText (string))
+//   - appSwitchCount: int (required, count of app switches, >= 0)
+//   - appSwitchLogs: list of maps (required, <= 1000 logs: timestamp, duration, type)
+//
+// Collection: exam_results
+// Document ID: Result Auto-ID
+// Fields:
+//   - id: string (required, Result ID)
+//   - examId: string (required, ID of exam)
+//   - userId: string (required, Student UID)
+//   - sessionId: string (required, Session ID)
+//   - pgScore: number (required, total score for multiple choice, >= 0)
+//   - essayScore: number (optional, score for essays graded by teacher)
+//   - totalScore: number (required, combined score, >= 0)
+//   - gradingStatus: string (required, 'graded' | 'pending_essay' | 'auto_submitted')
+//   - essayGrades: map (optional, questionId -> score, feedback)
+//   - submittedAt: timestamp (required)
+//   - gradedAt: timestamp (optional)
+//   - gradedBy: string (optional, Guru UID)
+//
+// Collection: question_bank
+// Document ID: Item Auto-ID
+// Fields:
+//   - All question fields + createdBy (string, Guru UID)
+//
+// ===============================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Default: deny all access (will be updated in Issue #11 & #54)
-    match /{document=**} {
-      allow read, write: if false;
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function getUserRole() {
+      return getUserData().role;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+
+    function isGuru() {
+      return isAuthenticated() && getUserRole() == 'guru';
+    }
+
+    function isSiswa() {
+      return isAuthenticated() && getUserRole() == 'siswa';
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Schema Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.keys().hasOnly(['uid', 'name', 'email', 'role', 'createdAt', 'isActive']) &&
+             data.keys().hasAll(['uid', 'name', 'email', 'role', 'createdAt', 'isActive']) &&
+             data.uid is string && data.uid.size() >= 20 && data.uid.size() <= 128 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             data.email is string && isValidEmail(data.email) && data.email.size() <= 100 &&
+             data.role in ['admin', 'guru', 'siswa'] &&
+             data.createdAt is timestamp &&
+             data.isActive is bool;
+    }
+
+    function isValidExam(data) {
+      return data.keys().hasOnly(['id', 'title', 'description', 'code', 'createdBy', 'duration', 'startDate', 'endDate', 'isActive', 'shuffleQuestions', 'shuffleOptions', 'totalQuestions']) &&
+             data.keys().hasAll(['id', 'title', 'description', 'code', 'createdBy', 'duration', 'startDate', 'endDate', 'isActive', 'shuffleQuestions', 'shuffleOptions', 'totalQuestions']) &&
+             data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             data.description is string && data.description.size() <= 1000 &&
+             data.code is string && data.code.size() >= 1 && data.code.size() <= 20 &&
+             data.createdBy is string && data.createdBy.size() >= 20 && data.createdBy.size() <= 128 &&
+             data.duration is int && data.duration > 0 &&
+             data.startDate is timestamp &&
+             data.endDate is timestamp &&
+             data.startDate < data.endDate &&
+             data.isActive is bool &&
+             data.shuffleQuestions is bool &&
+             data.shuffleOptions is bool &&
+             data.totalQuestions is int && data.totalQuestions >= 0;
+    }
+
+    function isValidQuestion(data) {
+      let hasAllRequired = data.keys().hasAll(['id', 'type', 'text', 'maxScore', 'order', 'points']);
+      let hasOnlyAllowed = data.keys().hasOnly(['id', 'type', 'text', 'options', 'correctAnswer', 'essayGuideline', 'maxScore', 'order', 'points']);
+      
+      return hasAllRequired && hasOnlyAllowed &&
+             data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+             data.type in ['pg', 'essay'] &&
+             data.text is string && data.text.size() >= 1 && data.text.size() <= 2000 &&
+             data.maxScore is number && data.maxScore > 0 &&
+             data.order is int && data.order >= 0 &&
+             data.points is number && data.points > 0 &&
+             (data.type == 'pg' ? 
+                (data.keys().hasAll(['options', 'correctAnswer']) && 
+                 data.options is list && data.options.size() >= 2 && data.options.size() <= 10 &&
+                 data.correctAnswer is int && data.correctAnswer >= 0 && data.correctAnswer < data.options.size()) : 
+                (!('options' in data) && !('correctAnswer' in data))) &&
+             (!('essayGuideline' in data) || (data.essayGuideline is string && data.essayGuideline.size() <= 2000));
+    }
+
+    function isValidExamSession(data) {
+      let hasAllRequired = data.keys().hasAll(['id', 'examId', 'userId', 'startedAt', 'status', 'questionOrder', 'optionOrders', 'answers', 'appSwitchCount', 'appSwitchLogs']);
+      let hasOnlyAllowed = data.keys().hasOnly(['id', 'examId', 'userId', 'startedAt', 'endedAt', 'status', 'questionOrder', 'optionOrders', 'answers', 'appSwitchCount', 'appSwitchLogs']);
+      
+      return hasAllRequired && hasOnlyAllowed &&
+             data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+             data.examId is string && data.examId.size() >= 1 && data.examId.size() <= 128 &&
+             data.userId is string && data.userId.size() >= 20 && data.userId.size() <= 128 &&
+             data.startedAt is timestamp &&
+             (!('endedAt' in data) || data.endedAt is timestamp) &&
+             data.status in ['in_progress', 'completed', 'auto_submitted'] &&
+             data.questionOrder is list && data.questionOrder.size() <= 100 &&
+             data.optionOrders is map &&
+             data.answers is map &&
+             data.appSwitchCount is int && data.appSwitchCount >= 0 &&
+             data.appSwitchLogs is list && data.appSwitchLogs.size() <= 1000;
+    }
+
+    function isValidExamResult(data) {
+      let hasAllRequired = data.keys().hasAll(['id', 'examId', 'userId', 'sessionId', 'pgScore', 'totalScore', 'gradingStatus', 'submittedAt']);
+      let hasOnlyAllowed = data.keys().hasOnly(['id', 'examId', 'userId', 'sessionId', 'pgScore', 'essayScore', 'totalScore', 'gradingStatus', 'essayGrades', 'submittedAt', 'gradedAt', 'gradedBy']);
+      
+      return hasAllRequired && hasOnlyAllowed &&
+             data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+             data.examId is string && data.examId.size() >= 1 && data.examId.size() <= 128 &&
+             data.userId is string && data.userId.size() >= 20 && data.userId.size() <= 128 &&
+             data.sessionId is string && data.sessionId.size() >= 1 && data.sessionId.size() <= 128 &&
+             data.pgScore is number && data.pgScore >= 0 &&
+             (!('essayScore' in data) || (data.essayScore is number && data.essayScore >= 0)) &&
+             data.totalScore is number && data.totalScore >= 0 &&
+             data.gradingStatus in ['graded', 'pending_essay', 'auto_submitted'] &&
+             (!('essayGrades' in data) || data.essayGrades is map) &&
+             data.submittedAt is timestamp &&
+             (!('gradedAt' in data) || data.gradedAt is timestamp) &&
+             (!('gradedBy' in data) || (data.gradedBy is string && data.gradedBy.size() >= 20 && data.gradedBy.size() <= 128));
+    }
+
+    function isValidQuestionBankItem(data) {
+      let hasAllRequired = data.keys().hasAll(['id', 'type', 'text', 'maxScore', 'order', 'points', 'createdBy']);
+      let hasOnlyAllowed = data.keys().hasOnly(['id', 'type', 'text', 'options', 'correctAnswer', 'essayGuideline', 'maxScore', 'order', 'points', 'createdBy']);
+      
+      return hasAllRequired && hasOnlyAllowed &&
+             data.createdBy is string && data.createdBy.size() >= 20 && data.createdBy.size() <= 128 &&
+             data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+             data.type in ['pg', 'essay'] &&
+             data.text is string && data.text.size() >= 1 && data.text.size() <= 2000 &&
+             data.maxScore is number && data.maxScore > 0 &&
+             data.order is int && data.order >= 0 &&
+             data.points is number && data.points > 0 &&
+             (data.type == 'pg' ? 
+                (data.keys().hasAll(['options', 'correctAnswer']) && 
+                 data.options is list && data.options.size() >= 2 && data.options.size() <= 10 &&
+                 data.correctAnswer is int && data.correctAnswer >= 0 && data.correctAnswer < data.options.size()) : 
+                (!('options' in data) && !('correctAnswer' in data))) &&
+             (!('essayGuideline' in data) || (data.essayGuideline is string && data.essayGuideline.size() <= 2000));
+    }
+
+    // ===============================================================
+    // Collection Access Rules
+    // ===============================================================
+
+    // 1. Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create, update, delete: if isAdmin() && isValidUser(request.resource.data);
+    }
+
+    // 2. Exams Collection
+    match /exams/{examId} {
+      allow read: if isAdmin() ||
+                     (isGuru() && resource.data.createdBy == request.auth.uid) ||
+                     (isSiswa() && resource.data.isActive == true);
+      allow create: if (isAdmin() && isValidExam(request.resource.data)) ||
+                       (isGuru() && request.resource.data.createdBy == request.auth.uid && isValidExam(request.resource.data));
+      allow update: if (isAdmin() && isValidExam(request.resource.data)) ||
+                       (isGuru() && 
+                        resource.data.createdBy == request.auth.uid && 
+                        request.resource.data.createdBy == resource.data.createdBy && 
+                        isValidExam(request.resource.data));
+      allow delete: if isAdmin() || 
+                       (isGuru() && resource.data.createdBy == request.auth.uid);
+    }
+
+    // 3. Questions Subcollection
+    match /exams/{examId}/questions/{questionId} {
+      allow read: if isAdmin() ||
+                     (isGuru() && get(/databases/$(database)/documents/exams/$(examId)).data.createdBy == request.auth.uid) ||
+                     (isSiswa() && get(/databases/$(database)/documents/exams/$(examId)).data.isActive == true);
+      allow create, update: if (isAdmin() && isValidQuestion(request.resource.data)) ||
+                              (isGuru() && 
+                               get(/databases/$(database)/documents/exams/$(examId)).data.createdBy == request.auth.uid && 
+                               isValidQuestion(request.resource.data));
+      allow delete: if isAdmin() || 
+                       (isGuru() && get(/databases/$(database)/documents/exams/$(examId)).data.createdBy == request.auth.uid);
+    }
+
+    // 4. Exam Sessions Collection
+    match /exam_sessions/{sessionId} {
+      allow read: if isAdmin() ||
+                     (isSiswa() && resource.data.userId == request.auth.uid) ||
+                     (isGuru() && get(/databases/$(database)/documents/exams/$(resource.data.examId)).data.createdBy == request.auth.uid);
+      allow create: if (isAdmin() && isValidExamSession(request.resource.data)) ||
+                       (isSiswa() && 
+                        request.resource.data.userId == request.auth.uid && 
+                        isValidExamSession(request.resource.data));
+      allow update: if (isAdmin() && isValidExamSession(request.resource.data)) ||
+                       (isSiswa() && 
+                        resource.data.userId == request.auth.uid && 
+                        request.resource.data.userId == resource.data.userId &&
+                        // Immutability checks for security
+                        request.resource.data.examId == resource.data.examId &&
+                        request.resource.data.startedAt == resource.data.startedAt &&
+                        isValidExamSession(request.resource.data));
+      allow delete: if isAdmin() ||
+                       (isSiswa() && resource.data.userId == request.auth.uid);
+    }
+
+    // 5. Exam Results Collection
+    match /exam_results/{resultId} {
+      allow read: if isAdmin() ||
+                     (isSiswa() && resource.data.userId == request.auth.uid) ||
+                     (isGuru() && get(/databases/$(database)/documents/exams/$(resource.data.examId)).data.createdBy == request.auth.uid);
+      allow create: if (isAdmin() && isValidExamResult(request.resource.data)) ||
+                       (isSiswa() && 
+                        request.resource.data.userId == request.auth.uid && 
+                        isValidExamResult(request.resource.data) &&
+                        !('essayScore' in request.resource.data) &&
+                        !('essayGrades' in request.resource.data) &&
+                        !('gradedAt' in request.resource.data) &&
+                        !('gradedBy' in request.resource.data) &&
+                        request.resource.data.gradingStatus in ['pending_essay', 'auto_submitted']);
+      allow update: if (isAdmin() && isValidExamResult(request.resource.data)) ||
+                       (isGuru() && 
+                        get(/databases/$(database)/documents/exams/$(resource.data.examId)).data.createdBy == request.auth.uid &&
+                        isValidExamResult(request.resource.data) &&
+                        // Immutability checks: Guru cannot modify student's original exam session info or MC scores
+                        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['id', 'examId', 'userId', 'sessionId', 'pgScore', 'submittedAt']) &&
+                        request.resource.data.gradedBy == request.auth.uid &&
+                        request.resource.data.gradingStatus == 'graded' &&
+                        request.resource.data.gradedAt == request.time);
+      allow delete: if isAdmin();
+    }
+
+    // 6. Question Bank Collection
+    match /question_bank/{itemId} {
+      allow read: if isAdmin() || 
+                     (isGuru() && resource.data.createdBy == request.auth.uid);
+      allow create: if (isAdmin() && isValidQuestionBankItem(request.resource.data)) ||
+                       (isGuru() && 
+                        request.resource.data.createdBy == request.auth.uid && 
+                        isValidQuestionBankItem(request.resource.data));
+      allow update: if (isAdmin() && isValidQuestionBankItem(request.resource.data)) ||
+                       (isGuru() && 
+                        resource.data.createdBy == request.auth.uid && 
+                        request.resource.data.createdBy == resource.data.createdBy && 
+                        isValidQuestionBankItem(request.resource.data));
+      allow delete: if isAdmin() || 
+                       (isGuru() && resource.data.createdBy == request.auth.uid);
     }
   }
 }
