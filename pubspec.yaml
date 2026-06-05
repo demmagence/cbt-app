@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 0.1.0+1
 
 environment:
-  sdk: ^3.12.0
+  sdk: ^3.11.0
 
 dependencies:
   cloud_firestore: ^6.5.0
@@ -16,7 +16,6 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
-  flutter_windowmanager: ^0.2.0
   go_router: ^17.3.0
   google_fonts: ^8.1.0
   intl: ^0.20.2

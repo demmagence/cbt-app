@@ -1,15 +1,5 @@
 import 'package:flutter/material.dart';
 
-class SiswaDashboardScreen extends StatelessWidget {
-  const SiswaDashboardScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Siswa Dashboard Screen')),
-    );
-  }
-}
 
 class JoinExamScreen extends StatelessWidget {
   const JoinExamScreen({super.key});
