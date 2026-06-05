@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'config/theme/app_theme.dart';
 
 class CbtApp extends StatelessWidget {
   const CbtApp({super.key});
@@ -7,10 +8,7 @@ class CbtApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'CBT App',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
       home: const Scaffold(
         body: Center(
           child: Text('CBT App Initialized'),
