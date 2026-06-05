@@ -6,7 +6,7 @@ import '../../blocs/auth/auth_state.dart';
 import '../../screens/admin/placeholder.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/guru/placeholder.dart';
-import '../../screens/siswa/placeholder.dart';
+import '../../screens/siswa/profile_screen.dart';
 import '../../screens/siswa/dashboard_screen.dart';
 import '../../screens/siswa/join_exam_screen.dart';
 import '../../screens/siswa/exam_taking_screen.dart';
