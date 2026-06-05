@@ -202,15 +202,7 @@ class _UserManagementViewState extends State<UserManagementView> {
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () {
-          // Tap to edit -> goes to edit screen or displays a toast.
-          // Since edit screen is implemented in issue 14, we will show a SnackBar or navigate
-          // to /admin/users/edit/:id if that's what issue 14 will define.
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Mengedit user: ${user.name} (Gunakan menu edit/Issue #14)'),
-              duration: const Duration(seconds: 2),
-            ),
-          );
+          context.go('/admin/users/${user.uid}/edit', extra: user);
         },
         onLongPress: () => _showActionMenu(context, user, theme),
         child: Padding(
@@ -383,12 +375,7 @@ class _UserManagementViewState extends State<UserManagementView> {
                   title: const Text('Edit Data Pengguna'),
                   onTap: () {
                     Navigator.pop(context);
-                    // Edit action SnackBar
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Edit ${user.name} (Implementasi di Issue #14)'),
-                      ),
-                    );
+                    context.go('/admin/users/${user.uid}/edit', extra: user);
                   },
                 ),
                 ListTile(
