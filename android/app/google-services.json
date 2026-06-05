@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "210353983182",
+    "project_id": "cbt-app-wibisana",
+    "storage_bucket": "cbt-app-wibisana.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:210353983182:android:edf2b5729971c6ae564a9f",
+        "android_client_info": {
+          "package_name": "com.example.cbt_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOJEO0oVubDrFZh2s8Nnq_spknbmTsuAI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
