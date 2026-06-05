@@ -10,6 +10,7 @@ import '../../screens/siswa/placeholder.dart';
 import '../../screens/siswa/dashboard_screen.dart';
 import '../../screens/siswa/join_exam_screen.dart';
 import '../../screens/siswa/exam_taking_screen.dart';
+import '../../screens/siswa/exam_history_screen.dart';
 import '../../widgets/common/app_drawer.dart';
 
 // Helper class to notify GoRouter of AuthBloc state changes
