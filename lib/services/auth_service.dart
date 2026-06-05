@@ -48,4 +48,9 @@ class AuthService {
       throw Exception('No user is currently signed in.');
     }
   }
+
+  // Send password reset email
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
+  }
 }

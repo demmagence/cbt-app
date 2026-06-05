@@ -6,8 +6,10 @@ import '../../blocs/auth/auth_state.dart';
 import '../../screens/admin/placeholder.dart';
 import '../../screens/admin/admin_dashboard_screen.dart';
 import '../../screens/admin/user_management_screen.dart';
+import '../../screens/admin/edit_user_screen.dart';
 import '../../screens/admin/create_user_screen.dart';
 import '../../screens/auth/login_screen.dart';
+import '../../models/user_model.dart';
 import '../../screens/guru/placeholder.dart';
 import '../../screens/siswa/profile_screen.dart';
 import '../../screens/siswa/dashboard_screen.dart';
@@ -103,6 +105,14 @@ class AppRouter {
             GoRoute(
               path: '/admin/users/create',
               builder: (context, state) => const CreateUserScreen(),
+            ),
+            GoRoute(
+              path: '/admin/users/:uid/edit',
+              builder: (context, state) {
+                final uid = state.pathParameters['uid'] ?? '';
+                final extra = state.extra as UserModel?;
+                return EditUserScreen(uid: uid, initialUser: extra);
+              },
             ),
             GoRoute(
               path: '/admin/statistics',
