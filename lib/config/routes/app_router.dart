@@ -1,14 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../blocs/auth/auth_bloc.dart';
-import '../../blocs/auth/auth_event.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../screens/admin/placeholder.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/guru/placeholder.dart';
 import '../../screens/siswa/placeholder.dart';
+import '../../widgets/common/app_drawer.dart';
 
 // Helper class to notify GoRouter of AuthBloc state changes
 class GoRouterRefreshStream extends ChangeNotifier {
@@ -222,52 +221,7 @@ class AdminShellScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('CBT Admin Portal')),
-      drawer: Drawer(
-        child: ListView(
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
-              child: Text(
-                'Menu Admin',
-                style: TextStyle(color: Colors.white, fontSize: 20),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.dashboard),
-              title: const Text('Dashboard'),
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/admin/dashboard');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text('Kelola Pengguna'),
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/admin/users');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.analytics),
-              title: const Text('Statistik'),
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/admin/statistics');
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Keluar'),
-              onTap: () {
-                Navigator.pop(context);
-                context.read<AuthBloc>().add(const AuthLogoutRequested());
-              },
-            ),
-          ],
-        ),
-      ),
+      drawer: const AppDrawer(),
       body: child,
     );
   }
@@ -281,68 +235,7 @@ class GuruShellScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('CBT Guru Portal')),
-      drawer: Drawer(
-        child: ListView(
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
-              child: Text(
-                'Menu Guru',
-                style: TextStyle(color: Colors.white, fontSize: 20),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.dashboard),
-              title: const Text('Dashboard'),
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/guru/dashboard');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.assignment),
-              title: const Text('Daftar Ujian'),
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/guru/exams');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.book),
-              title: const Text('Bank Soal'),
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/guru/question-bank');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.grade),
-              title: const Text('Penilaian Essay'),
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/guru/grading');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.live_tv),
-              title: const Text('Monitoring Sesi'),
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/guru/monitoring');
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Keluar'),
-              onTap: () {
-                Navigator.pop(context);
-                context.read<AuthBloc>().add(const AuthLogoutRequested());
-              },
-            ),
-          ],
-        ),
-      ),
+      drawer: const AppDrawer(),
       body: child,
     );
   }
