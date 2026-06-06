@@ -29,6 +29,8 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
   late final ExamSessionBloc _bloc;
   DateTime? _appBackgroundTime;
   late final PageController _pageController;
+  bool _showReview = false;
+  String _examTitle = 'Ujian';
 
   @override
   void initState() {
@@ -115,8 +117,16 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
                   backgroundColor: Colors.green,
                 ),
               );
-              context.go('/siswa/dashboard');
+              context.go(
+                '/siswa/exam-success',
+                extra: {
+                  'examTitle': _examTitle,
+                  'pgScore': state.result.pgScore,
+                  'gradingStatus': state.result.gradingStatus,
+                },
+              );
             } else if (state is ExamSessionActive) {
+              _examTitle = state.exam.title;
               // Animate PageView to current page
               if (_pageController.hasClients && _pageController.page?.round() != state.currentIndex) {
                 _pageController.animateToPage(
@@ -167,6 +177,10 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
               final isFlagged = state.flaggedQuestions.contains(question.id);
               final theme = Theme.of(context);
 
+              if (_showReview) {
+                return _buildReviewScaffold(context, state, theme);
+              }
+
               return Scaffold(
                 appBar: AppBar(
                   leading: const SizedBox.shrink(), // Disable leading arrow
@@ -178,6 +192,15 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
                     ],
                   ),
                   actions: [
+                    IconButton(
+                      icon: const Icon(Icons.assignment_turned_in_rounded),
+                      tooltip: 'Review Ujian',
+                      onPressed: () {
+                        setState(() {
+                          _showReview = true;
+                        });
+                      },
+                    ),
                     IconButton(
                       icon: const Icon(Icons.grid_view_rounded),
                       tooltip: 'Navigasi Soal',
@@ -321,13 +344,15 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
                                   foregroundColor: Colors.white,
                                   minimumSize: const Size(100, 48),
                                 ),
-                                onPressed: () {
-                                  if (isLast) {
-                                    _showSubmitConfirmation(context);
-                                  } else {
-                                    _bloc.add(QuestionNavigated(state.currentIndex + 1));
-                                  }
-                                },
+                                 onPressed: () {
+                                   if (isLast) {
+                                     setState(() {
+                                       _showReview = true;
+                                     });
+                                   } else {
+                                     _bloc.add(QuestionNavigated(state.currentIndex + 1));
+                                   }
+                                 },
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -442,9 +467,6 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
     );
   }
 
-
-
-
   void _showQuestionPalette(BuildContext context, ExamSessionActive state) {
     showModalBottomSheet(
       context: context,
@@ -462,13 +484,25 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
     );
   }
 
-  void _showSubmitConfirmation(BuildContext context) {
+  void _onPressSubmit(BuildContext context, ExamSessionActive state) {
+    int unansweredCount = 0;
+    for (final q in state.questions) {
+      final hasAnswer = state.session.answers.containsKey(q.id) &&
+          (state.session.answers[q.id]?.toString().trim().isNotEmpty ?? false);
+      if (!hasAnswer) {
+        unansweredCount++;
+      }
+    }
+
+    final contentText = unansweredCount > 0
+        ? 'Anda yakin? Ada $unansweredCount soal yang belum dijawab. Jawaban tidak bisa diubah setelah submit.'
+        : 'Apakah Anda yakin ingin menyelesaikan ujian dan mengirimkan jawaban Anda?';
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Kirim Ujian?'),
-        content: const Text(
-            'Apakah Anda yakin ingin menyelesaikan ujian dan mengirimkan jawaban Anda? Pastikan semua soal telah terjawab.'),
+        content: Text(contentText),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -483,6 +517,300 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildReviewScaffold(BuildContext context, ExamSessionActive state, ThemeData theme) {
+    int totalPG = 0;
+    int answeredPG = 0;
+    int totalEssay = 0;
+    int answeredEssay = 0;
+    int unansweredCount = 0;
+
+    for (final q in state.questions) {
+      final hasAnswer = state.session.answers.containsKey(q.id) &&
+          (state.session.answers[q.id]?.toString().trim().isNotEmpty ?? false);
+      if (q.isPg) {
+        totalPG++;
+        if (hasAnswer) answeredPG++;
+      } else if (q.isEssay) {
+        totalEssay++;
+        if (hasAnswer) answeredEssay++;
+      }
+      if (!hasAnswer) {
+        unansweredCount++;
+      }
+    }
+
+    final totalQuestions = state.questions.length;
+    final totalAnswered = answeredPG + answeredEssay;
+    final progress = totalQuestions > 0 ? (totalAnswered / totalQuestions) : 0.0;
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => setState(() => _showReview = false),
+          tooltip: 'Kembali ke Ujian',
+        ),
+        title: const Text('Review Jawaban Ujian'),
+        centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Center(
+              child: CountdownTimer(remainingTime: state.remainingTime),
+            ),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Stats Header Card
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Card(
+                elevation: 0,
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Ringkasan Jawaban',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '$totalAnswered dari $totalQuestions soal terjawab',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: unansweredCount > 0
+                                  ? Colors.orange.withValues(alpha: 0.15)
+                                  : Colors.green.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              unansweredCount > 0 ? '$unansweredCount Belum Dijawab' : 'Semua Terjawab',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: unansweredCount > 0 ? Colors.orange[800] : Colors.green[800],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 8,
+                          backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            unansweredCount > 0 ? theme.colorScheme.primary : Colors.green,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildStatItem('Pilihan Ganda', '$answeredPG / $totalPG', theme),
+                          _buildStatItem('Essay', '$answeredEssay / $totalEssay', theme),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Question List
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                itemCount: totalQuestions,
+                itemBuilder: (context, index) {
+                  final q = state.questions[index];
+                  final hasAnswer = state.session.answers.containsKey(q.id) &&
+                      (state.session.answers[q.id]?.toString().trim().isNotEmpty ?? false);
+                  final isFlagged = state.flaggedQuestions.contains(q.id);
+
+                  return Card(
+                    elevation: 0,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: hasAnswer
+                            ? theme.colorScheme.outline.withValues(alpha: 0.1)
+                            : Colors.orange.withValues(alpha: 0.3),
+                        width: hasAnswer ? 1 : 1.5,
+                      ),
+                    ),
+                    color: hasAnswer
+                        ? theme.colorScheme.surface
+                        : Colors.orange.withValues(alpha: 0.05),
+                    child: ListTile(
+                      onTap: () {
+                        _bloc.add(QuestionNavigated(index));
+                        setState(() {
+                          _showReview = false;
+                        });
+                      },
+                      leading: CircleAvatar(
+                        backgroundColor: hasAnswer
+                            ? (q.isPg ? theme.colorScheme.primary : Colors.green[600])
+                            : Colors.orange[200],
+                        foregroundColor: Colors.white,
+                        radius: 18,
+                        child: Text(
+                          '${index + 1}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      title: Text(
+                        q.text,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      subtitle: Row(
+                        children: [
+                          Text(
+                            q.isPg ? 'Pilihan Ganda' : 'Essay',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          if (isFlagged) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Ragu-Ragu',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: Colors.amber[800],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      trailing: hasAnswer
+                          ? Icon(Icons.check_circle_rounded, color: Colors.green[600])
+                          : Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'BELUM DIJAWAB',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: Colors.orange[800],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            // Bottom action bar
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () => setState(() => _showReview = false),
+                      child: const Text('Kembali ke Ujian'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green[600],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () => _onPressSubmit(context, state),
+                      child: const Text(
+                        'Submit Ujian',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, ThemeData theme) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }
