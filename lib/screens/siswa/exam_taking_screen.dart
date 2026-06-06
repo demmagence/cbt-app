@@ -30,6 +30,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
   DateTime? _appBackgroundTime;
   late final PageController _pageController;
   bool _showReview = false;
+  bool _timeUpDialogShown = false;
   String _examTitle = 'Ujian';
 
   @override
@@ -111,12 +112,6 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
           body: BlocConsumer<ExamSessionBloc, ExamSessionState>(
           listener: (context, state) {
             if (state is ExamSessionCompleted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Ujian berhasil dikirimkan.'),
-                  backgroundColor: Colors.green,
-                ),
-              );
               context.go(
                 '/siswa/exam-success',
                 extra: {
@@ -127,6 +122,11 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
               );
             } else if (state is ExamSessionActive) {
               _examTitle = state.exam.title;
+              // Trigger "Waktu habis!" dialog when timer hits 0
+              if (state.remainingTime == 0 && !_timeUpDialogShown) {
+                _timeUpDialogShown = true;
+                _showTimeUpDialog(context);
+              }
               // Animate PageView to current page
               if (_pageController.hasClients && _pageController.page?.round() != state.currentIndex) {
                 _pageController.animateToPage(
@@ -134,6 +134,11 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
                 );
+              }
+            } else if (state is ExamSessionSubmitting) {
+              // Close any open dialogs (e.g., time's up dialog)
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
               }
             }
           },
@@ -481,6 +486,43 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
           },
         );
       },
+    );
+  }
+
+  /// Shows the "Waktu Habis" dialog when the exam timer expires.
+  /// The BLoC will handle the actual auto-submission after the dialog is shown.
+  void _showTimeUpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.timer_off_rounded, color: Colors.red, size: 48),
+        title: const Text(
+          'Waktu Habis!',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Waktu ujian telah berakhir. Jawaban Anda akan otomatis dikumpulkan.',
+          textAlign: TextAlign.center,
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(),
+            icon: const Icon(Icons.send_rounded),
+            label: const Text('OK, Kumpulkan Sekarang'),
+          ),
+        ],
+      ),
     );
   }
 
