@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,6 +12,7 @@ import '../../models/question_model.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/common/loading_widget.dart';
 import '../../widgets/common/error_widget.dart';
+import '../../widgets/siswa/essay_answer_field.dart';
 
 class ExamTakingScreen extends StatefulWidget {
   final String examId;
@@ -26,8 +26,6 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   late final ExamSessionBloc _bloc;
   DateTime? _appBackgroundTime;
-  final TextEditingController _essayController = TextEditingController();
-  Timer? _debounceTimer;
   late final AnimationController _blinkController;
   late final PageController _pageController;
 
@@ -38,8 +36,6 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     _pageController = PageController(initialPage: 0);
-
-    _essayController.addListener(_onEssayTextChanged);
 
     _blinkController = AnimationController(
       vsync: this,
@@ -56,16 +52,10 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
     }
   }
 
-  void _onEssayTextChanged() {
-    setState(() {});
-  }
-
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    _essayController.dispose();
-    _debounceTimer?.cancel();
     _blinkController.dispose();
     _pageController.dispose();
     _bloc.close();
@@ -116,13 +106,6 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
-  void _onEssayChanged(String qId, String text) {
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 600), () {
-      _bloc.add(EssayAnswerUpdated(questionId: qId, text: text));
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -161,15 +144,6 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
                 );
-              }
-
-              // Sync essay controller for active question
-              final question = state.questions[state.currentIndex];
-              if (question.isEssay) {
-                final currentAnswer = state.session.answers[question.id] ?? '';
-                if (_essayController.text != currentAnswer) {
-                  _essayController.text = currentAnswer;
-                }
               }
             }
           },
@@ -318,7 +292,16 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
                                     if (q.isPg && q.options != null)
                                       _buildPgOptions(q, state, theme)
                                     else if (q.isEssay)
-                                      _buildEssayInput(q, theme),
+                                      EssayAnswerField(
+                                        key: ValueKey(q.id),
+                                        initialText: state.session.answers[q.id]?.toString() ?? '',
+                                        onAutoSave: (text) {
+                                          _bloc.add(EssayAnswerUpdated(
+                                            questionId: q.id,
+                                            text: text,
+                                          ));
+                                        },
+                                      ),
                                   ],
                                 ),
                               );
@@ -503,44 +486,8 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
     );
   }
 
-  int _getWordCount(String text) {
-    if (text.trim().isEmpty) return 0;
-    return text.trim().split(RegExp(r'\s+')).length;
-  }
 
-  Widget _buildEssayInput(QuestionModel question, ThemeData theme) {
-    final wordCount = _getWordCount(_essayController.text);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Lembar Jawaban:',
-              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            Text(
-              '$wordCount kata',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _essayController,
-          maxLines: 8,
-          decoration: const InputDecoration(
-            hintText: 'Tuliskan jawaban Anda di sini...',
-          ),
-          onChanged: (val) => _onEssayChanged(question.id, val),
-        ),
-      ],
-    );
-  }
+
 
   void _showQuestionPalette(BuildContext context, ExamSessionActive state) {
     showModalBottomSheet(
