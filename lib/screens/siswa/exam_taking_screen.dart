@@ -13,6 +13,7 @@ import '../../services/firestore_service.dart';
 import '../../widgets/common/loading_widget.dart';
 import '../../widgets/common/error_widget.dart';
 import '../../widgets/siswa/essay_answer_field.dart';
+import '../../widgets/siswa/question_navigator.dart';
 
 class ExamTakingScreen extends StatefulWidget {
   final String examId;
@@ -492,82 +493,15 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
   void _showQuestionPalette(BuildContext context, ExamSessionActive state) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        final theme = Theme.of(context);
-        return Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Daftar Soal Ujian',
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              Flexible(
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                  ),
-                  itemCount: state.questions.length,
-                  itemBuilder: (context, index) {
-                    final q = state.questions[index];
-                    final isCurrent = index == state.currentIndex;
-                    final hasAnswer = state.session.answers.containsKey(q.id) &&
-                        (state.session.answers[q.id]?.toString().trim().isNotEmpty ?? false);
-                    final isFlagged = state.flaggedQuestions.contains(q.id);
-
-                    Color bgColor = theme.colorScheme.surface;
-                    Color textColor = theme.colorScheme.onSurface;
-                    BorderSide borderSide = BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.3));
-
-                    if (isFlagged) {
-                      bgColor = Colors.amber;
-                      textColor = Colors.white;
-                      borderSide = BorderSide.none;
-                    } else if (hasAnswer) {
-                      bgColor = theme.colorScheme.primary;
-                      textColor = Colors.white;
-                      borderSide = BorderSide.none;
-                    }
-
-                    if (isCurrent) {
-                      borderSide = BorderSide(color: theme.colorScheme.secondary, width: 3);
-                    }
-
-                    return InkWell(
-                      onTap: () {
-                        _bloc.add(QuestionNavigated(index));
-                        Navigator.pop(context);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: bgColor,
-                          border: Border.fromBorderSide(borderSide),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          '${index + 1}',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
+        return QuestionNavigator(
+          state: state,
+          onQuestionTap: (index) {
+            _bloc.add(QuestionNavigated(index));
+            Navigator.pop(context);
+          },
         );
       },
     );
