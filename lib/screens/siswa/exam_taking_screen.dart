@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../blocs/auth/auth_bloc.dart';
@@ -28,11 +29,17 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
   final TextEditingController _essayController = TextEditingController();
   Timer? _debounceTimer;
   late final AnimationController _blinkController;
+  late final PageController _pageController;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+    _pageController = PageController(initialPage: 0);
+
+    _essayController.addListener(_onEssayTextChanged);
 
     _blinkController = AnimationController(
       vsync: this,
@@ -49,12 +56,18 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
     }
   }
 
+  void _onEssayTextChanged() {
+    setState(() {});
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _essayController.dispose();
     _debounceTimer?.cancel();
     _blinkController.dispose();
+    _pageController.dispose();
     _bloc.close();
     super.dispose();
   }
@@ -114,8 +127,13 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _bloc,
-      child: Scaffold(
-        body: BlocConsumer<ExamSessionBloc, ExamSessionState>(
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+        },
+        child: Scaffold(
+          body: BlocConsumer<ExamSessionBloc, ExamSessionState>(
           listener: (context, state) {
             if (state is ExamSessionCompleted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -133,6 +151,24 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
               } else {
                 if (_blinkController.isAnimating) {
                   _blinkController.stop();
+                }
+              }
+
+              // Animate PageView to current page
+              if (_pageController.hasClients && _pageController.page?.round() != state.currentIndex) {
+                _pageController.animateToPage(
+                  state.currentIndex,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              }
+
+              // Sync essay controller for active question
+              final question = state.questions[state.currentIndex];
+              if (question.isEssay) {
+                final currentAnswer = state.session.answers[question.id] ?? '';
+                if (_essayController.text != currentAnswer) {
+                  _essayController.text = currentAnswer;
                 }
               }
             }
@@ -176,14 +212,6 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
               final isFirst = state.currentIndex == 0;
               final isFlagged = state.flaggedQuestions.contains(question.id);
               final theme = Theme.of(context);
-
-              // Set controller text once when changing question
-              if (question.isEssay) {
-                final currentText = state.session.answers[question.id] ?? '';
-                if (_essayController.text != currentText) {
-                  _essayController.text = currentText;
-                }
-              }
 
               return Scaffold(
                 appBar: AppBar(
@@ -264,29 +292,37 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
                         
                         // Question Text Card
                         Expanded(
-                          child: SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Card(
-                                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Text(
-                                      question.text,
-                                      style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
+                          child: PageView.builder(
+                            controller: _pageController,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: state.questions.length,
+                            itemBuilder: (context, index) {
+                              final q = state.questions[index];
+                              return SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Card(
+                                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: Text(
+                                          q.text,
+                                          style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                                const SizedBox(height: 20),
+                                    const SizedBox(height: 20),
 
-                                // Answer Options / Text Field
-                                if (question.isPg && question.options != null)
-                                  _buildPgOptions(question, state, theme)
-                                else if (question.isEssay)
-                                  _buildEssayInput(question, theme),
-                              ],
-                            ),
+                                    // Answer Options / Text Field
+                                    if (q.isPg && q.options != null)
+                                      _buildPgOptions(q, state, theme)
+                                    else if (q.isEssay)
+                                      _buildEssayInput(q, theme),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
                         ),
 
@@ -376,8 +412,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
           },
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildPgOptions(QuestionModel question, ExamSessionActive state, ThemeData theme) {
     final optionOrder = state.session.optionOrders[question.id] ?? [];
@@ -435,6 +472,29 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
                     ),
                   ),
                 ),
+                const SizedBox(width: 8),
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline.withValues(alpha: 0.5),
+                      width: 2,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: isSelected
+                      ? Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: theme.colorScheme.primary,
+                          ),
+                        )
+                      : null,
+                ),
               ],
             ),
           ),
@@ -443,13 +503,31 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
     );
   }
 
+  int _getWordCount(String text) {
+    if (text.trim().isEmpty) return 0;
+    return text.trim().split(RegExp(r'\s+')).length;
+  }
+
   Widget _buildEssayInput(QuestionModel question, ThemeData theme) {
+    final wordCount = _getWordCount(_essayController.text);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Lembar Jawaban:',
-          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Lembar Jawaban:',
+              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              '$wordCount kata',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         TextField(
