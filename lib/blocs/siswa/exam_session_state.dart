@@ -26,6 +26,7 @@ class ExamSessionActive extends ExamSessionState {
   final int currentIndex;
   final int remainingTime; // in seconds
   final Set<String> flaggedQuestions;
+  final Set<String> visitedQuestions;
 
   const ExamSessionActive({
     required this.exam,
@@ -34,6 +35,7 @@ class ExamSessionActive extends ExamSessionState {
     required this.currentIndex,
     required this.remainingTime,
     required this.flaggedQuestions,
+    required this.visitedQuestions,
   });
 
   ExamSessionActive copyWith({
@@ -43,6 +45,7 @@ class ExamSessionActive extends ExamSessionState {
     int? currentIndex,
     int? remainingTime,
     Set<String>? flaggedQuestions,
+    Set<String>? visitedQuestions,
   }) {
     return ExamSessionActive(
       exam: exam ?? this.exam,
@@ -51,6 +54,7 @@ class ExamSessionActive extends ExamSessionState {
       currentIndex: currentIndex ?? this.currentIndex,
       remainingTime: remainingTime ?? this.remainingTime,
       flaggedQuestions: flaggedQuestions ?? this.flaggedQuestions,
+      visitedQuestions: visitedQuestions ?? this.visitedQuestions,
     );
   }
 
@@ -62,6 +66,7 @@ class ExamSessionActive extends ExamSessionState {
         currentIndex,
         remainingTime,
         flaggedQuestions,
+        visitedQuestions,
       ];
 }
 

@@ -176,6 +176,12 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
       final totalDurationSeconds = exam.duration * 60;
       final remainingSeconds = totalDurationSeconds - elapsedSeconds;
 
+      // Define visited questions: first question + any questions that have answers
+      final initialVisited = <String>{
+        if (orderedQuestions.isNotEmpty) orderedQuestions.first.id,
+        ...session.answers.keys,
+      };
+
       if (remainingSeconds <= 0) {
         emit(ExamSessionActive(
           exam: exam,
@@ -184,6 +190,7 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
           currentIndex: 0,
           remainingTime: 0,
           flaggedQuestions: const {},
+          visitedQuestions: initialVisited,
         ));
         add(const ExamSubmitted(isAutoSubmit: true));
         return;
@@ -196,6 +203,7 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
         currentIndex: 0,
         remainingTime: remainingSeconds,
         flaggedQuestions: const {},
+        visitedQuestions: initialVisited,
       ));
 
       _startTimer();
@@ -241,7 +249,12 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
     final currentState = state;
     if (currentState is ExamSessionActive) {
       if (event.index >= 0 && event.index < currentState.questions.length) {
-        emit(currentState.copyWith(currentIndex: event.index));
+        final targetQuestionId = currentState.questions[event.index].id;
+        final nextVisited = Set<String>.from(currentState.visitedQuestions)..add(targetQuestionId);
+        emit(currentState.copyWith(
+          currentIndex: event.index,
+          visitedQuestions: nextVisited,
+        ));
       }
     }
   }
