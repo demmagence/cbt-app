@@ -86,3 +86,8 @@ class FlagToggled extends ExamSessionEvent {
   @override
   List<Object?> get props => [questionId];
 }
+
+class AppResumed extends ExamSessionEvent {
+  const AppResumed();
+}
+

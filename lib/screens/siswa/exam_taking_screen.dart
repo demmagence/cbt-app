@@ -21,16 +21,23 @@ class ExamTakingScreen extends StatefulWidget {
   State<ExamTakingScreen> createState() => _ExamTakingScreenState();
 }
 
-class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBindingObserver {
+class _ExamTakingScreenState extends State<ExamTakingScreen>
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   late final ExamSessionBloc _bloc;
   DateTime? _appBackgroundTime;
   final TextEditingController _essayController = TextEditingController();
   Timer? _debounceTimer;
+  late final AnimationController _blinkController;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    _blinkController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
 
     _bloc = ExamSessionBloc(
       firestoreService: context.read<FirestoreService>(),
@@ -47,6 +54,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
     WidgetsBinding.instance.removeObserver(this);
     _essayController.dispose();
     _debounceTimer?.cancel();
+    _blinkController.dispose();
     _bloc.close();
     super.dispose();
   }
@@ -60,6 +68,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
       _appBackgroundTime ??= DateTime.now();
     } else if (state == AppLifecycleState.resumed) {
       // User returned to the app
+      _bloc.add(const AppResumed());
       if (_appBackgroundTime != null) {
         final duration = DateTime.now().difference(_appBackgroundTime!).inSeconds;
         if (duration > 0) {
@@ -116,6 +125,16 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
                 ),
               );
               context.go('/siswa/dashboard');
+            } else if (state is ExamSessionActive) {
+              if (state.remainingTime < 60) {
+                if (!_blinkController.isAnimating) {
+                  _blinkController.repeat(reverse: true);
+                }
+              } else {
+                if (_blinkController.isAnimating) {
+                  _blinkController.stop();
+                }
+              }
             }
           },
           builder: (context, state) {
@@ -178,13 +197,24 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
                         children: [
                           Icon(Icons.timer_outlined, size: 14, color: theme.colorScheme.primary),
                           const SizedBox(width: 4),
-                          Text(
-                            _formatTime(state.remainingTime),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: state.remainingTime < 300 ? Colors.red : theme.colorScheme.primary,
-                            ),
-                          ),
+                          state.remainingTime < 60
+                              ? FadeTransition(
+                                  opacity: Tween<double>(begin: 1.0, end: 0.2).animate(_blinkController),
+                                  child: Text(
+                                    _formatTime(state.remainingTime),
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  _formatTime(state.remainingTime),
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: state.remainingTime < 300 ? Colors.red : theme.colorScheme.primary,
+                                  ),
+                                ),
                         ],
                       ),
                     ],
