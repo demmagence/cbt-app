@@ -14,6 +14,7 @@ import '../../widgets/common/loading_widget.dart';
 import '../../widgets/common/error_widget.dart';
 import '../../widgets/siswa/essay_answer_field.dart';
 import '../../widgets/siswa/question_navigator.dart';
+import '../../widgets/siswa/countdown_timer.dart';
 
 class ExamTakingScreen extends StatefulWidget {
   final String examId;
@@ -24,10 +25,9 @@ class ExamTakingScreen extends StatefulWidget {
 }
 
 class _ExamTakingScreenState extends State<ExamTakingScreen>
-    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+    with WidgetsBindingObserver {
   late final ExamSessionBloc _bloc;
   DateTime? _appBackgroundTime;
-  late final AnimationController _blinkController;
   late final PageController _pageController;
 
   @override
@@ -37,11 +37,6 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     _pageController = PageController(initialPage: 0);
-
-    _blinkController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
 
     _bloc = ExamSessionBloc(
       firestoreService: context.read<FirestoreService>(),
@@ -57,7 +52,6 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    _blinkController.dispose();
     _pageController.dispose();
     _bloc.close();
     super.dispose();
@@ -100,12 +94,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
     }
   }
 
-  String _formatTime(int totalSeconds) {
-    final hours = totalSeconds ~/ 3600;
-    final minutes = (totalSeconds % 3600) ~/ 60;
-    final seconds = totalSeconds % 60;
-    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -128,16 +117,6 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
               );
               context.go('/siswa/dashboard');
             } else if (state is ExamSessionActive) {
-              if (state.remainingTime < 60) {
-                if (!_blinkController.isAnimating) {
-                  _blinkController.repeat(reverse: true);
-                }
-              } else {
-                if (_blinkController.isAnimating) {
-                  _blinkController.stop();
-                }
-              }
-
               // Animate PageView to current page
               if (_pageController.hasClients && _pageController.page?.round() != state.currentIndex) {
                 _pageController.animateToPage(
@@ -195,31 +174,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
                     children: [
                       Text(state.exam.title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 2),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.timer_outlined, size: 14, color: theme.colorScheme.primary),
-                          const SizedBox(width: 4),
-                          state.remainingTime < 60
-                              ? FadeTransition(
-                                  opacity: Tween<double>(begin: 1.0, end: 0.2).animate(_blinkController),
-                                  child: Text(
-                                    _formatTime(state.remainingTime),
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.red,
-                                    ),
-                                  ),
-                                )
-                              : Text(
-                                  _formatTime(state.remainingTime),
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: state.remainingTime < 300 ? Colors.red : theme.colorScheme.primary,
-                                  ),
-                                ),
-                        ],
-                      ),
+                      CountdownTimer(remainingTime: state.remainingTime),
                     ],
                   ),
                   actions: [
