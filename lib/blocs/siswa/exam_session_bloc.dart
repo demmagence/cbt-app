@@ -25,6 +25,7 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
     on<TimerExpired>(_onTimerExpired);
     on<AppSwitchDetected>(_onAppSwitchDetected);
     on<FlagToggled>(_onFlagToggled);
+    on<AppResumed>(_onAppResumed);
   }
 
   @override
@@ -354,6 +355,24 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
       emit(ExamSessionCompleted(result));
     } catch (e) {
       emit(ExamSessionError('Gagal mengirimkan ujian: ${e.toString()}'));
+    }
+  }
+
+  void _onAppResumed(AppResumed event, Emitter<ExamSessionState> emit) {
+    final currentState = state;
+    if (currentState is ExamSessionActive) {
+      final now = DateTime.now();
+      final elapsedSeconds = now.difference(currentState.session.startedAt).inSeconds;
+      final totalDurationSeconds = currentState.exam.duration * 60;
+      final remainingSeconds = totalDurationSeconds - elapsedSeconds;
+
+      if (remainingSeconds <= 0) {
+        emit(currentState.copyWith(remainingTime: 0));
+        add(const ExamSubmitted(isAutoSubmit: true));
+      } else {
+        emit(currentState.copyWith(remainingTime: remainingSeconds));
+        _startTimer();
+      }
     }
   }
 }
