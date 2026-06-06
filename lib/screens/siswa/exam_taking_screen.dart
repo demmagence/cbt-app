@@ -4,7 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_state.dart';
-import '../../blocs/siswa/exam_taking_cubit.dart';
+import '../../blocs/siswa/exam_session_bloc.dart';
+import '../../blocs/siswa/exam_session_event.dart';
+import '../../blocs/siswa/exam_session_state.dart';
 import '../../models/exam_session_model.dart';
 import '../../models/question_model.dart';
 import '../../services/firestore_service.dart';
@@ -20,7 +22,7 @@ class ExamTakingScreen extends StatefulWidget {
 }
 
 class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBindingObserver {
-  late final ExamTakingCubit _cubit;
+  late final ExamSessionBloc _bloc;
   DateTime? _appBackgroundTime;
   final TextEditingController _essayController = TextEditingController();
   Timer? _debounceTimer;
@@ -30,13 +32,13 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    _cubit = ExamTakingCubit(
+    _bloc = ExamSessionBloc(
       firestoreService: context.read<FirestoreService>(),
     );
 
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
-      _cubit.loadSession(widget.examId, authState.user.uid);
+      _bloc.add(ExamStarted(examId: widget.examId, userId: authState.user.uid));
     }
   }
 
@@ -45,7 +47,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
     WidgetsBinding.instance.removeObserver(this);
     _essayController.dispose();
     _debounceTimer?.cancel();
-    _cubit.close();
+    _bloc.close();
     super.dispose();
   }
 
@@ -66,7 +68,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
             duration: duration,
             type: 'app_switch',
           );
-          _cubit.logAppSwitch(log);
+          _bloc.add(AppSwitchDetected(log));
           
           // Show warning toast/alert
           ScaffoldMessenger.of(context).showSnackBar(
@@ -95,18 +97,18 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
   void _onEssayChanged(String qId, String text) {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 600), () {
-      _cubit.saveAnswer(qId, text);
+      _bloc.add(EssayAnswerUpdated(questionId: qId, text: text));
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
-      value: _cubit,
+      value: _bloc,
       child: Scaffold(
-        body: BlocConsumer<ExamTakingCubit, ExamTakingState>(
+        body: BlocConsumer<ExamSessionBloc, ExamSessionState>(
           listener: (context, state) {
-            if (state is ExamTakingSubmitted) {
+            if (state is ExamSessionCompleted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Ujian berhasil dikirimkan.'),
@@ -117,19 +119,19 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
             }
           },
           builder: (context, state) {
-            if (state is ExamTakingLoading) {
+            if (state is ExamSessionLoading) {
               return const Scaffold(
                 body: LoadingWidget(message: 'Memuat lembar ujian...'),
               );
             }
 
-            if (state is ExamTakingSubmitting) {
+            if (state is ExamSessionSubmitting) {
               return const Scaffold(
                 body: LoadingWidget(message: 'Mengirimkan lembar jawaban...'),
               );
             }
 
-            if (state is ExamTakingError) {
+            if (state is ExamSessionError) {
               return Scaffold(
                 appBar: AppBar(
                   leading: IconButton(
@@ -142,23 +144,23 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
                   onRetry: () {
                     final authState = context.read<AuthBloc>().state;
                     if (authState is AuthAuthenticated) {
-                      _cubit.loadSession(widget.examId, authState.user.uid);
+                      _bloc.add(ExamStarted(examId: widget.examId, userId: authState.user.uid));
                     }
                   },
                 ),
               );
             }
 
-            if (state is ExamTakingActive) {
-              final question = state.orderedQuestions[state.currentIndex];
-              final isLast = state.currentIndex == state.orderedQuestions.length - 1;
+            if (state is ExamSessionActive) {
+              final question = state.questions[state.currentIndex];
+              final isLast = state.currentIndex == state.questions.length - 1;
               final isFirst = state.currentIndex == 0;
               final isFlagged = state.flaggedQuestions.contains(question.id);
               final theme = Theme.of(context);
 
               // Set controller text once when changing question
               if (question.isEssay) {
-                final currentText = state.answers[question.id] ?? '';
+                final currentText = state.session.answers[question.id] ?? '';
                 if (_essayController.text != currentText) {
                   _essayController.text = currentText;
                 }
@@ -177,10 +179,10 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
                           Icon(Icons.timer_outlined, size: 14, color: theme.colorScheme.primary),
                           const SizedBox(width: 4),
                           Text(
-                            _formatTime(state.remainingSeconds),
+                            _formatTime(state.remainingTime),
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: state.remainingSeconds < 300 ? Colors.red : theme.colorScheme.primary,
+                              color: state.remainingTime < 300 ? Colors.red : theme.colorScheme.primary,
                             ),
                           ),
                         ],
@@ -206,7 +208,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Soal Nomor ${state.currentIndex + 1} dari ${state.orderedQuestions.length}',
+                              'Soal Nomor ${state.currentIndex + 1} dari ${state.questions.length}',
                               style: theme.textTheme.titleSmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.bold,
@@ -270,14 +272,14 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
                                 style: OutlinedButton.styleFrom(
                                   minimumSize: const Size(100, 48),
                                 ),
-                                onPressed: isFirst ? null : () => _cubit.updateIndex(state.currentIndex - 1),
+                                onPressed: isFirst ? null : () => _bloc.add(QuestionNavigated(state.currentIndex - 1)),
                                 icon: const Icon(Icons.chevron_left_rounded),
                                 label: const Text('Sebelumnya'),
                               ),
 
                               // Flag / Ragu-ragu
                               InkWell(
-                                onTap: () => _cubit.toggleFlag(question.id),
+                                onTap: () => _bloc.add(FlagToggled(question.id)),
                                 borderRadius: BorderRadius.circular(12),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -318,7 +320,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
                                   if (isLast) {
                                     _showSubmitConfirmation(context);
                                   } else {
-                                    _cubit.updateIndex(state.currentIndex + 1);
+                                    _bloc.add(QuestionNavigated(state.currentIndex + 1));
                                   }
                                 },
                                 child: Row(
@@ -347,9 +349,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
     );
   }
 
-  Widget _buildPgOptions(QuestionModel question, ExamTakingActive state, ThemeData theme) {
+  Widget _buildPgOptions(QuestionModel question, ExamSessionActive state, ThemeData theme) {
     final optionOrder = state.session.optionOrders[question.id] ?? [];
-    final answers = state.answers;
+    final answers = state.session.answers;
 
     return ListView.separated(
       shrinkWrap: true,
@@ -363,7 +365,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
         final optionLabel = String.fromCharCode(65 + index); // A, B, C, D, E...
 
         return InkWell(
-          onTap: () => _cubit.saveAnswer(question.id, originalIndex),
+          onTap: () => _bloc.add(AnswerSelected(questionId: question.id, answerIndex: originalIndex)),
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -432,7 +434,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
     );
   }
 
-  void _showQuestionPalette(BuildContext context, ExamTakingActive state) {
+  void _showQuestionPalette(BuildContext context, ExamSessionActive state) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -459,12 +461,12 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
                   ),
-                  itemCount: state.orderedQuestions.length,
+                  itemCount: state.questions.length,
                   itemBuilder: (context, index) {
-                    final q = state.orderedQuestions[index];
+                    final q = state.questions[index];
                     final isCurrent = index == state.currentIndex;
-                    final hasAnswer = state.answers.containsKey(q.id) &&
-                        (state.answers[q.id]?.toString().trim().isNotEmpty ?? false);
+                    final hasAnswer = state.session.answers.containsKey(q.id) &&
+                        (state.session.answers[q.id]?.toString().trim().isNotEmpty ?? false);
                     final isFlagged = state.flaggedQuestions.contains(q.id);
 
                     Color bgColor = theme.colorScheme.surface;
@@ -487,7 +489,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
 
                     return InkWell(
                       onTap: () {
-                        _cubit.updateIndex(index);
+                        _bloc.add(QuestionNavigated(index));
                         Navigator.pop(context);
                       },
                       child: Container(
@@ -531,7 +533,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> with WidgetsBinding
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _cubit.submitExam();
+              _bloc.add(const ExamSubmitted());
             },
             child: const Text('Kirim'),
           ),
