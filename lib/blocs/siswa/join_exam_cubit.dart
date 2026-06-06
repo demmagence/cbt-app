@@ -114,10 +114,15 @@ class JoinExamCubit extends Cubit<JoinExamState> {
         return;
       }
 
-      // Sort or shuffle questions
+      // Generate a new session ID first to use as seed
+      final sessionId = '${userId}_${exam.id}_${DateTime.now().millisecondsSinceEpoch}';
+      final seed = _getSeedFromString(sessionId);
+      final random = Random(seed);
+
+      // Sort or shuffle questions using Fisher-Yates
       final questionList = List<QuestionModel>.from(questions);
       if (exam.shuffleQuestions) {
-        questionList.shuffle();
+        _fisherYatesShuffle(questionList, random);
       } else {
         questionList.sort((a, b) => a.order.compareTo(b.order));
       }
@@ -126,13 +131,12 @@ class JoinExamCubit extends Cubit<JoinExamState> {
 
       // Shuffle options for PG questions if shuffleOptions is enabled
       final optionOrders = <String, List<int>>{};
-      final random = Random();
 
       for (final q in questionList) {
         if (q.isPg && q.options != null && q.options!.isNotEmpty) {
           final indices = List<int>.generate(q.options!.length, (index) => index);
           if (exam.shuffleOptions) {
-            indices.shuffle(random);
+            _fisherYatesShuffle(indices, random);
           }
           optionOrders[q.id] = indices;
         } else {
@@ -140,8 +144,7 @@ class JoinExamCubit extends Cubit<JoinExamState> {
         }
       }
 
-      // 2. Generate a new session
-      final sessionId = '${userId}_${exam.id}_${DateTime.now().millisecondsSinceEpoch}';
+      // 2. Generate the new session
       final newSession = ExamSessionModel(
         id: sessionId,
         examId: exam.id,
@@ -165,6 +168,23 @@ class JoinExamCubit extends Cubit<JoinExamState> {
       emit(JoinExamSuccess(newSession));
     } catch (e) {
       emit(JoinExamError('Gagal memulai sesi ujian: ${e.toString()}'));
+    }
+  }
+
+  int _getSeedFromString(String str) {
+    int hash = 0;
+    for (int i = 0; i < str.length; i++) {
+      hash = str.codeUnitAt(i) + ((hash << 5) - hash);
+    }
+    return hash.abs();
+  }
+
+  void _fisherYatesShuffle<T>(List<T> list, Random random) {
+    for (int i = list.length - 1; i > 0; i--) {
+      int j = random.nextInt(i + 1);
+      final temp = list[i];
+      list[i] = list[j];
+      list[j] = temp;
     }
   }
 }
