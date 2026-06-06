@@ -31,6 +31,7 @@ class CbtApp extends StatelessWidget {
               title: 'CBT App',
               theme: AppTheme.lightTheme,
               routerConfig: router,
+              debugShowCheckedModeBanner: false,
             );
           },
         ),
