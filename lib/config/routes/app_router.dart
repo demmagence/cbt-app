@@ -16,6 +16,7 @@ import '../../screens/siswa/dashboard_screen.dart';
 import '../../screens/siswa/join_exam_screen.dart';
 import '../../screens/siswa/exam_taking_screen.dart';
 import '../../screens/siswa/exam_history_screen.dart';
+import '../../screens/siswa/exam_success_screen.dart';
 import '../../widgets/common/app_drawer.dart';
 
 // Helper class to notify GoRouter of AuthBloc state changes
@@ -222,6 +223,20 @@ class AppRouter {
           builder: (context, state) {
             final examId = state.pathParameters['id'] ?? '';
             return ExamTakingScreen(examId: examId);
+          },
+        ),
+        GoRoute(
+          path: '/siswa/exam-success',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>? ?? {};
+            final examTitle = extra['examTitle'] as String? ?? 'Ujian';
+            final pgScore = extra['pgScore'] as double?;
+            final gradingStatus = extra['gradingStatus'] as String? ?? 'graded';
+            return ExamSuccessScreen(
+              examTitle: examTitle,
+              pgScore: pgScore?.toDouble(),
+              gradingStatus: gradingStatus,
+            );
           },
         ),
       ],
