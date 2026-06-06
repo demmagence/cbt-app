@@ -391,11 +391,11 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
       itemBuilder: (context, index) {
         final originalIndex = optionOrder.isNotEmpty ? optionOrder[index] : index;
         final optionText = question.options![originalIndex];
-        final isSelected = answers[question.id] == originalIndex;
+        final isSelected = answers[question.id] == index;
         final optionLabel = String.fromCharCode(65 + index); // A, B, C, D, E...
 
         return InkWell(
-          onTap: () => _bloc.add(AnswerSelected(questionId: question.id, answerIndex: originalIndex)),
+          onTap: () => _bloc.add(AnswerSelected(questionId: question.id, answerIndex: index)),
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

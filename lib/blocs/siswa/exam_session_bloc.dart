@@ -74,9 +74,13 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
 
       if (sessions.isEmpty) {
         // Create new session if one does not exist (robust fallback)
+        final sessionId = '${event.userId}_${event.examId}_${DateTime.now().millisecondsSinceEpoch}';
+        final seed = _getSeedFromString(sessionId);
+        final random = Random(seed);
+
         final questionList = List<QuestionModel>.from(questions);
         if (exam.shuffleQuestions) {
-          questionList.shuffle();
+          _fisherYatesShuffle(questionList, random);
         } else {
           questionList.sort((a, b) => a.order.compareTo(b.order));
         }
@@ -85,13 +89,11 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
 
         // Shuffle options for PG questions
         final optionOrders = <String, List<int>>{};
-        final random = Random();
-
         for (final q in questionList) {
           if (q.isPg && q.options != null && q.options!.isNotEmpty) {
             final indices = List<int>.generate(q.options!.length, (index) => index);
             if (exam.shuffleOptions) {
-              indices.shuffle(random);
+              _fisherYatesShuffle(indices, random);
             }
             optionOrders[q.id] = indices;
           } else {
@@ -99,7 +101,6 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
           }
         }
 
-        final sessionId = '${event.userId}_${event.examId}_${DateTime.now().millisecondsSinceEpoch}';
         session = ExamSessionModel(
           id: sessionId,
           examId: event.examId,
@@ -120,6 +121,46 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
         );
       } else {
         session = sessions.first;
+        if (session.questionOrder.isEmpty || session.optionOrders.isEmpty) {
+          final seed = _getSeedFromString(session.id);
+          final random = Random(seed);
+
+          final questionList = List<QuestionModel>.from(questions);
+          if (exam.shuffleQuestions) {
+            _fisherYatesShuffle(questionList, random);
+          } else {
+            questionList.sort((a, b) => a.order.compareTo(b.order));
+          }
+
+          final questionOrder = questionList.map((q) => q.id).toList();
+
+          final optionOrders = <String, List<int>>{};
+          for (final q in questionList) {
+            if (q.isPg && q.options != null && q.options!.isNotEmpty) {
+              final indices = List<int>.generate(q.options!.length, (index) => index);
+              if (exam.shuffleOptions) {
+                _fisherYatesShuffle(indices, random);
+              }
+              optionOrders[q.id] = indices;
+            } else {
+              optionOrders[q.id] = const [];
+            }
+          }
+
+          session = session.copyWith(
+            questionOrder: questionOrder,
+            optionOrders: optionOrders,
+          );
+
+          await _firestoreService.updateDocument(
+            path: FirestoreService.examSessionsPath,
+            docId: session.id,
+            data: {
+              'questionOrder': questionOrder,
+              'optionOrders': optionOrders,
+            },
+          );
+        }
       }
 
       // Map questions by ID for ordered lookups
@@ -311,7 +352,13 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
         if (q.isPg) {
           final studentAnswer = answers[q.id];
           if (studentAnswer != null && studentAnswer is int) {
-            if (studentAnswer == q.correctAnswer) {
+            final optionOrder = session.optionOrders[q.id] ?? [];
+            final originalSelectedIndex = optionOrder.isNotEmpty &&
+                    studentAnswer >= 0 &&
+                    studentAnswer < optionOrder.length
+                ? optionOrder[studentAnswer]
+                : studentAnswer;
+            if (originalSelectedIndex == q.correctAnswer) {
               pgScore += q.points;
             }
           }
@@ -373,6 +420,23 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
         emit(currentState.copyWith(remainingTime: remainingSeconds));
         _startTimer();
       }
+    }
+  }
+
+  int _getSeedFromString(String str) {
+    int hash = 0;
+    for (int i = 0; i < str.length; i++) {
+      hash = str.codeUnitAt(i) + ((hash << 5) - hash);
+    }
+    return hash.abs();
+  }
+
+  void _fisherYatesShuffle<T>(List<T> list, Random random) {
+    for (int i = list.length - 1; i > 0; i--) {
+      int j = random.nextInt(i + 1);
+      final temp = list[i];
+      list[i] = list[j];
+      list[j] = temp;
     }
   }
 }
