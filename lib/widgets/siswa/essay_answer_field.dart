@@ -48,12 +48,21 @@ class _EssayAnswerFieldState extends State<EssayAnswerField> {
     _controller.addListener(_onTextChanged);
   }
 
+  void _savePendingChanges() {
+    if (_saveStatus == EssaySaveStatus.saving) {
+      _debounceTimer?.cancel();
+      widget.onAutoSave?.call(_controller.text);
+      _saveStatus = EssaySaveStatus.saved;
+    }
+  }
+
   @override
   void didUpdateWidget(EssayAnswerField oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Only sync text if the initial text changed from the outside (question switch).
     if (oldWidget.initialText != widget.initialText &&
         _controller.text != widget.initialText) {
+      _savePendingChanges();
       _controller.text = widget.initialText;
       _controller.selection = TextSelection.collapsed(offset: _controller.text.length);
       // Reset save status when switching questions
@@ -66,7 +75,7 @@ class _EssayAnswerFieldState extends State<EssayAnswerField> {
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
+    _savePendingChanges();
     _controller.removeListener(_onTextChanged);
     _controller.dispose();
     super.dispose();
