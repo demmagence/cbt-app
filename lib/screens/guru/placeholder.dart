@@ -1,16 +1,5 @@
 import 'package:flutter/material.dart';
 
-class GuruDashboardScreen extends StatelessWidget {
-  const GuruDashboardScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Guru Dashboard Screen')),
-    );
-  }
-}
-
 class ExamListScreen extends StatelessWidget {
   const ExamListScreen({super.key});
 
