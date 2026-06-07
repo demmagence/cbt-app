@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/exam_session_model.dart';
+import 'screen_security_service.dart';
 
 /// Callback type for app switch events.
 typedef AppSwitchCallback = void Function(AppSwitchLog log);
@@ -46,6 +47,9 @@ class AntiCheatManager with WidgetsBindingObserver {
 
     WidgetsBinding.instance.addObserver(this);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+    // Enable screenshot prevention
+    ScreenSecurityService.instance.enable();
   }
 
   /// Deactivates all anti-cheat measures.
@@ -58,6 +62,9 @@ class AntiCheatManager with WidgetsBindingObserver {
 
     WidgetsBinding.instance.removeObserver(this);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+    // Disable screenshot prevention
+    ScreenSecurityService.instance.disable();
 
     _onAppSwitchedCallback = null;
     _onResumedCallback = null;
