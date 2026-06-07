@@ -120,8 +120,12 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
             }
 
             if (state is ExamSessionSubmitting) {
-              return const Scaffold(
-                body: LoadingWidget(message: 'Mengirimkan lembar jawaban...'),
+              return Scaffold(
+                body: LoadingWidget(
+                  message: state.isOffline
+                      ? 'Menunggu koneksi untuk mengirim jawaban...'
+                      : 'Mengirimkan lembar jawaban...',
+                ),
               );
             }
 
@@ -189,6 +193,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        if (state.isOffline) _buildOfflineBanner(theme),
                         // Question Header
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -354,6 +359,48 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
     ),
   );
 }
+
+  Widget _buildOfflineBanner(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.amber.shade300,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.wifi_off_rounded, color: Colors.amber.shade900, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Offline — Koneksi Terputus',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber.shade900,
+                  ),
+                ),
+                Text(
+                  'Jawaban Anda akan disimpan lokal dan disinkronkan otomatis saat online.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontSize: 10.5,
+                    color: Colors.amber.shade900.withValues(alpha: 0.85),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildPgOptions(QuestionModel question, ExamSessionActive state, ThemeData theme) {
     final optionOrder = state.session.optionOrders[question.id] ?? [];
@@ -649,6 +696,11 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            if (state.isOffline)
+              Padding(
+                padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0),
+                child: _buildOfflineBanner(theme),
+              ),
             // Stats Header Card
             Padding(
               padding: const EdgeInsets.all(16.0),

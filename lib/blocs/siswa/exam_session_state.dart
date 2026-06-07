@@ -27,6 +27,7 @@ class ExamSessionActive extends ExamSessionState {
   final int remainingTime; // in seconds
   final Set<String> flaggedQuestions;
   final Set<String> visitedQuestions;
+  final bool isOffline;
 
   const ExamSessionActive({
     required this.exam,
@@ -36,6 +37,7 @@ class ExamSessionActive extends ExamSessionState {
     required this.remainingTime,
     required this.flaggedQuestions,
     required this.visitedQuestions,
+    this.isOffline = false,
   });
 
   ExamSessionActive copyWith({
@@ -46,6 +48,7 @@ class ExamSessionActive extends ExamSessionState {
     int? remainingTime,
     Set<String>? flaggedQuestions,
     Set<String>? visitedQuestions,
+    bool? isOffline,
   }) {
     return ExamSessionActive(
       exam: exam ?? this.exam,
@@ -55,6 +58,7 @@ class ExamSessionActive extends ExamSessionState {
       remainingTime: remainingTime ?? this.remainingTime,
       flaggedQuestions: flaggedQuestions ?? this.flaggedQuestions,
       visitedQuestions: visitedQuestions ?? this.visitedQuestions,
+      isOffline: isOffline ?? this.isOffline,
     );
   }
 
@@ -67,11 +71,16 @@ class ExamSessionActive extends ExamSessionState {
         remainingTime,
         flaggedQuestions,
         visitedQuestions,
+        isOffline,
       ];
 }
 
 class ExamSessionSubmitting extends ExamSessionState {
-  const ExamSessionSubmitting();
+  final bool isOffline;
+  const ExamSessionSubmitting({this.isOffline = false});
+
+  @override
+  List<Object?> get props => [isOffline];
 }
 
 class ExamSessionCompleted extends ExamSessionState {
