@@ -6,6 +6,7 @@ import 'config/routes/app_router.dart';
 import 'config/theme/app_theme.dart';
 import 'services/auth_service.dart';
 import 'services/firestore_service.dart';
+import 'services/exam_code_service.dart';
 
 class CbtApp extends StatelessWidget {
   const CbtApp({super.key});
@@ -16,6 +17,7 @@ class CbtApp extends StatelessWidget {
       providers: [
         RepositoryProvider<AuthService>(create: (context) => AuthService()),
         RepositoryProvider<FirestoreService>(create: (context) => FirestoreService()),
+        RepositoryProvider<ExamCodeService>(create: (context) => ExamCodeService()),
       ],
       child: BlocProvider<AuthBloc>(
         create: (context) => AuthBloc(

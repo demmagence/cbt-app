@@ -11,16 +11,7 @@ class ExamListScreen extends StatelessWidget {
   }
 }
 
-class CreateExamScreen extends StatelessWidget {
-  const CreateExamScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Create Exam Screen')),
-    );
-  }
-}
 
 class EditExamScreen extends StatelessWidget {
   final String examId;
