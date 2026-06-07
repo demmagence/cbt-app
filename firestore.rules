@@ -140,14 +140,14 @@ service cloud.firestore {
              data.description is string && data.description.size() <= 1000 &&
              data.code is string && data.code.size() >= 1 && data.code.size() <= 20 &&
              data.createdBy is string && data.createdBy.size() >= 20 && data.createdBy.size() <= 128 &&
-             data.duration is int && data.duration > 0 &&
+             data.duration is number && data.duration > 0 &&
              data.startDate is timestamp &&
              data.endDate is timestamp &&
              data.startDate < data.endDate &&
              data.isActive is bool &&
              data.shuffleQuestions is bool &&
              data.shuffleOptions is bool &&
-             data.totalQuestions is int && data.totalQuestions >= 0;
+             data.totalQuestions is number && data.totalQuestions >= 0;
     }
 
     function isValidQuestion(data) {
@@ -159,12 +159,12 @@ service cloud.firestore {
              data.type in ['pg', 'essay'] &&
              data.text is string && data.text.size() >= 1 && data.text.size() <= 2000 &&
              data.maxScore is number && data.maxScore > 0 &&
-             data.order is int && data.order >= 0 &&
+             data.order is number && data.order >= 0 &&
              data.points is number && data.points > 0 &&
              (data.type == 'pg' ? 
                 (data.keys().hasAll(['options', 'correctAnswer']) && 
                  data.options is list && data.options.size() >= 2 && data.options.size() <= 10 &&
-                 data.correctAnswer is int && data.correctAnswer >= 0 && data.correctAnswer < data.options.size()) : 
+                 data.correctAnswer is number && data.correctAnswer >= 0 && data.correctAnswer < data.options.size()) : 
                 (!('options' in data) && !('correctAnswer' in data))) &&
              (!('essayGuideline' in data) || (data.essayGuideline is string && data.essayGuideline.size() <= 2000));
     }
@@ -183,7 +183,7 @@ service cloud.firestore {
              data.questionOrder is list && data.questionOrder.size() <= 100 &&
              data.optionOrders is map &&
              data.answers is map &&
-             data.appSwitchCount is int && data.appSwitchCount >= 0 &&
+             data.appSwitchCount is number && data.appSwitchCount >= 0 &&
              data.appSwitchLogs is list && data.appSwitchLogs.size() <= 1000;
     }
 
@@ -204,7 +204,7 @@ service cloud.firestore {
              data.submittedAt is timestamp &&
              (!('gradedAt' in data) || data.gradedAt is timestamp) &&
              (!('gradedBy' in data) || (data.gradedBy is string && data.gradedBy.size() >= 20 && data.gradedBy.size() <= 128)) &&
-             (!('appSwitchCount' in data) || (data.appSwitchCount is int && data.appSwitchCount >= 0));
+             (!('appSwitchCount' in data) || (data.appSwitchCount is number && data.appSwitchCount >= 0));
     }
 
     function isValidQuestionBankItem(data) {
@@ -217,12 +217,12 @@ service cloud.firestore {
              data.type in ['pg', 'essay'] &&
              data.text is string && data.text.size() >= 1 && data.text.size() <= 2000 &&
              data.maxScore is number && data.maxScore > 0 &&
-             data.order is int && data.order >= 0 &&
+             data.order is number && data.order >= 0 &&
              data.points is number && data.points > 0 &&
              (data.type == 'pg' ? 
                 (data.keys().hasAll(['options', 'correctAnswer']) && 
                  data.options is list && data.options.size() >= 2 && data.options.size() <= 10 &&
-                 data.correctAnswer is int && data.correctAnswer >= 0 && data.correctAnswer < data.options.size()) : 
+                 data.correctAnswer is number && data.correctAnswer >= 0 && data.correctAnswer < data.options.size()) : 
                 (!('options' in data) && !('correctAnswer' in data))) &&
              (!('essayGuideline' in data) || (data.essayGuideline is string && data.essayGuideline.size() <= 2000));
     }
@@ -230,13 +230,13 @@ service cloud.firestore {
     // ===============================================================
     // Collection Access Rules
     // ===============================================================
-
+ 
     // 1. Users Collection
     match /users/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isGuru());
       allow create, update, delete: if isAdmin() && isValidUser(request.resource.data);
     }
-
+ 
     // 2. Exams Collection
     match /exams/{examId} {
       allow read: if isAdmin() ||
