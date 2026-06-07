@@ -25,17 +25,7 @@ class EditExamScreen extends StatelessWidget {
   }
 }
 
-class AddQuestionScreen extends StatelessWidget {
-  final String examId;
-  const AddQuestionScreen({super.key, required this.examId});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(child: Text('Questions Setup for Exam: $examId')),
-    );
-  }
-}
 
 class QuestionBankScreen extends StatelessWidget {
   const QuestionBankScreen({super.key});
