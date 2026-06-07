@@ -14,6 +14,8 @@ import '../../screens/guru/placeholder.dart';
 import '../../screens/guru/guru_dashboard_screen.dart';
 import '../../screens/guru/create_exam_screen.dart';
 import '../../screens/guru/add_question_screen.dart';
+import '../../screens/guru/exam_list_screen.dart';
+import '../../screens/guru/edit_exam_screen.dart';
 import '../../screens/siswa/profile_screen.dart';
 import '../../screens/siswa/dashboard_screen.dart';
 import '../../screens/siswa/join_exam_screen.dart';

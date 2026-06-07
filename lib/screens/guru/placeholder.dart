@@ -1,29 +1,6 @@
 import 'package:flutter/material.dart';
 
-class ExamListScreen extends StatelessWidget {
-  const ExamListScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Exam List Screen')),
-    );
-  }
-}
-
-
-
-class EditExamScreen extends StatelessWidget {
-  final String examId;
-  const EditExamScreen({super.key, required this.examId});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(child: Text('Edit Exam Screen: $examId')),
-    );
-  }
-}
+// Placeholders for Guru Screens
 
 
 
