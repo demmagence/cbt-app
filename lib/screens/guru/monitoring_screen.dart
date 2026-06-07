@@ -121,7 +121,7 @@ class _MonitoringViewState extends State<MonitoringView> {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: DropdownButtonFormField<String>(
-                    value: selectedExamId,
+                    initialValue: selectedExamId,
                     decoration: InputDecoration(
                       labelText: 'Pilih Ujian Aktif',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
