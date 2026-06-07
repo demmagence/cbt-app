@@ -2,18 +2,6 @@ import 'package:flutter/material.dart';
 
 // Placeholders for Guru Screens
 
-class ExamResultsScreen extends StatelessWidget {
-  final String examId;
-  const ExamResultsScreen({super.key, required this.examId});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(child: Text('Exam Results: $examId')),
-    );
-  }
-}
-
 class StudentResultDetailScreen extends StatelessWidget {
   final String examId;
   final String userId;
