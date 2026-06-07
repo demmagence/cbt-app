@@ -70,6 +70,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _antiCheat.enforceFullscreen();
     return BlocProvider.value(
       value: _bloc,
       child: PopScope(
