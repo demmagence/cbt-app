@@ -233,7 +233,7 @@ service cloud.firestore {
 
     // 1. Users Collection
     match /users/{userId} {
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isGuru());
       allow create, update, delete: if isAdmin() && isValidUser(request.resource.data);
     }
 
@@ -246,9 +246,9 @@ service cloud.firestore {
                        (isGuru() && request.resource.data.createdBy == request.auth.uid && isValidExam(request.resource.data));
       allow update: if (isAdmin() && isValidExam(request.resource.data)) ||
                        (isGuru() && 
-                        resource.data.createdBy == request.auth.uid && 
-                        request.resource.data.createdBy == resource.data.createdBy && 
-                        isValidExam(request.resource.data));
+                         resource.data.createdBy == request.auth.uid && 
+                         request.resource.data.createdBy == resource.data.createdBy && 
+                         isValidExam(request.resource.data));
       allow delete: if isAdmin() || 
                        (isGuru() && resource.data.createdBy == request.auth.uid);
     }
@@ -290,8 +290,8 @@ service cloud.firestore {
     // 5. Exam Results Collection
     match /exam_results/{resultId} {
       allow read: if isAdmin() ||
-                     (isSiswa() && resource.data.userId == request.auth.uid) ||
-                     (isGuru() && get(/databases/$(database)/documents/exams/$(resource.data.examId)).data.createdBy == request.auth.uid);
+                     isGuru() ||
+                     (isSiswa() && resource.data.userId == request.auth.uid);
       allow create: if (isAdmin() && isValidExamResult(request.resource.data)) ||
                        (isSiswa() && 
                         request.resource.data.userId == request.auth.uid && 
