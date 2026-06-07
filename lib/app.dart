@@ -9,15 +9,24 @@ import 'services/firestore_service.dart';
 import 'services/exam_code_service.dart';
 
 class CbtApp extends StatelessWidget {
-  const CbtApp({super.key});
+  final AuthService? authService;
+  final FirestoreService? firestoreService;
+  final ExamCodeService? examCodeService;
+
+  const CbtApp({
+    super.key,
+    this.authService,
+    this.firestoreService,
+    this.examCodeService,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider<AuthService>(create: (context) => AuthService()),
-        RepositoryProvider<FirestoreService>(create: (context) => FirestoreService()),
-        RepositoryProvider<ExamCodeService>(create: (context) => ExamCodeService()),
+        RepositoryProvider<AuthService>(create: (context) => authService ?? AuthService()),
+        RepositoryProvider<FirestoreService>(create: (context) => firestoreService ?? FirestoreService()),
+        RepositoryProvider<ExamCodeService>(create: (context) => examCodeService ?? ExamCodeService()),
       ],
       child: BlocProvider<AuthBloc>(
         create: (context) => AuthBloc(
