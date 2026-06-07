@@ -20,6 +20,7 @@ import '../../screens/guru/question_bank_screen.dart';
 import '../../screens/guru/exam_results_screen.dart';
 import '../../screens/guru/student_result_detail_screen.dart';
 import '../../screens/guru/essay_grading_screen.dart';
+import '../../screens/guru/essay_grading_detail_screen.dart';
 import '../../screens/siswa/profile_screen.dart';
 import '../../screens/siswa/dashboard_screen.dart';
 import '../../screens/siswa/join_exam_screen.dart';
