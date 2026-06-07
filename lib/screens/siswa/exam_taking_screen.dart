@@ -45,17 +45,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
     _antiCheat.onAppSwitched((log) {
       _bloc.add(AppSwitchDetected(log));
       if (mounted) {
-        final count = _antiCheat.getAppSwitchCount();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Terdeteksi keluar dari aplikasi selama ${log.duration} detik! Pelanggaran ke-$count.',
-              style: const TextStyle(color: Colors.white),
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        _showAppSwitchWarningDialog(context, log.duration, _antiCheat.getAppSwitchCount());
       }
     });
     _antiCheat.onResumed(() {
@@ -465,6 +455,76 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
           },
         );
       },
+    );
+  }
+
+  /// Shows a warning dialog when the student switches away from the app.
+  void _showAppSwitchWarningDialog(BuildContext context, int durationSeconds, int violationCount) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        icon: Icon(
+          Icons.warning_amber_rounded,
+          color: Colors.red[700],
+          size: 48,
+        ),
+        title: Text(
+          'Pelanggaran ke-$violationCount',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Anda terdeteksi keluar dari aplikasi.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+              ),
+              child: Text(
+                'Durasi: $durationSeconds detik',
+                style: TextStyle(
+                  color: Colors.red[800],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Semua pelanggaran dicatat dan akan dilaporkan ke pengawas ujian.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[700],
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Saya Mengerti'),
+          ),
+        ],
+      ),
     );
   }
 
