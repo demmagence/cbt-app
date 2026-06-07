@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:uuid/uuid.dart';
 import '../../models/exam_model.dart';
 import '../../models/question_model.dart';
 import '../../services/firestore_service.dart';
@@ -195,6 +196,41 @@ class AddQuestionCubit extends Cubit<AddQuestionState> {
       await loadQuestions(examId);
     } catch (e) {
       emit(AddQuestionError('Gagal mengurutkan soal: ${e.toString()}'));
+    }
+  }
+
+  Future<void> importQuestions(String examId, List<QuestionModel> selectedQuestions) async {
+    try {
+      final state = this.state;
+      if (state is! AddQuestionLoaded) return;
+
+      emit(const AddQuestionLoading());
+
+      final qPath = _firestoreService.questionsPath(examId);
+      int currentOrder = state.questions.length;
+
+      for (final q in selectedQuestions) {
+        final newQuestion = q.copyWith(
+          id: const Uuid().v4(),
+          order: currentOrder++,
+        );
+        await _firestoreService.addDocument(
+          path: qPath,
+          docId: newQuestion.id,
+          data: newQuestion.toJson(),
+        );
+      }
+
+      final newTotal = state.exam.totalQuestions + selectedQuestions.length;
+      await _firestoreService.updateDocument(
+        path: FirestoreService.examsPath,
+        docId: examId,
+        data: {'totalQuestions': newTotal},
+      );
+
+      await loadQuestions(examId);
+    } catch (e) {
+      emit(AddQuestionError('Gagal mengimpor soal: ${e.toString()}'));
     }
   }
 }

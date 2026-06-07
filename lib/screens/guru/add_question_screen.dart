@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 import '../../blocs/guru/add_question_cubit.dart';
+import '../../blocs/guru/question_bank_cubit.dart';
+import '../../blocs/auth/auth_bloc.dart';
+import '../../blocs/auth/auth_state.dart';
 import '../../services/firestore_service.dart';
 import '../../models/question_model.dart';
 import '../../models/exam_model.dart';
@@ -89,6 +92,30 @@ class _AddQuestionViewState extends State<AddQuestionView> {
     );
   }
 
+  void _openImportDialog() async {
+    final authState = context.read<AuthBloc>().state;
+    String guruId = '';
+    if (authState is AuthAuthenticated) {
+      guruId = authState.user.uid;
+    }
+
+    final selected = await showModalBottomSheet<List<QuestionModel>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (modalContext) {
+        return ImportQuestionsDialog(guruId: guruId);
+      },
+    );
+
+    if (selected != null && selected.isNotEmpty && mounted) {
+      context.read<AddQuestionCubit>().importQuestions(widget.examId, selected);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -97,6 +124,11 @@ class _AddQuestionViewState extends State<AddQuestionView> {
       appBar: AppBar(
         title: const Text('Kelola Soal Ujian'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.library_add),
+            tooltip: 'Import dari Bank Soal',
+            onPressed: _openImportDialog,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _refresh,
@@ -766,6 +798,149 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class ImportQuestionsDialog extends StatefulWidget {
+  final String guruId;
+  const ImportQuestionsDialog({super.key, required this.guruId});
+
+  @override
+  State<ImportQuestionsDialog> createState() => _ImportQuestionsDialogState();
+}
+
+class _ImportQuestionsDialogState extends State<ImportQuestionsDialog> {
+  final List<QuestionModel> _selectedQuestions = [];
+  String _searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final mediaQuery = MediaQuery.of(context);
+
+    return BlocProvider<QuestionBankCubit>(
+      create: (context) => QuestionBankCubit(
+        firestoreService: context.read<FirestoreService>(),
+      )..loadQuestions(widget.guruId),
+      child: Container(
+        height: mediaQuery.size.height * 0.8,
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Import dari Bank Soal',
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'Cari Soal',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onChanged: (val) {
+                setState(() {
+                  _searchQuery = val.trim().toLowerCase();
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: BlocBuilder<QuestionBankCubit, QuestionBankState>(
+                builder: (context, state) {
+                  if (state is QuestionBankInitial || state is QuestionBankLoading) {
+                    return const LoadingWidget(message: 'Memuat bank soal...');
+                  }
+                  if (state is QuestionBankError) {
+                    return AppErrorWidget(
+                      errorMessage: state.message,
+                      onRetry: () => context.read<QuestionBankCubit>().loadQuestions(widget.guruId),
+                    );
+                  }
+                  if (state is QuestionBankLoaded) {
+                    var list = state.questions;
+                    if (_searchQuery.isNotEmpty) {
+                      list = list.where((q) => q.text.toLowerCase().contains(_searchQuery)).toList();
+                    }
+
+                    if (list.isEmpty) {
+                      return const EmptyStateWidget(
+                        title: 'Soal Tidak Ditemukan',
+                        description: 'Tidak ada soal di Bank Soal yang sesuai.',
+                      );
+                    }
+
+                    return ListView.builder(
+                      itemCount: list.length,
+                      itemBuilder: (context, index) {
+                        final question = list[index];
+                        final isSelected = _selectedQuestions.any((q) => q.id == question.id);
+
+                        return CheckboxListTile(
+                          title: Text(
+                            question.text,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(
+                            question.isPg 
+                                ? 'Pilihan Ganda • Bobot: ${question.points}' 
+                                : 'Essay • Skor Maks: ${question.maxScore}',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          value: isSelected,
+                          onChanged: (val) {
+                            setState(() {
+                              if (val == true) {
+                                _selectedQuestions.add(question);
+                              } else {
+                                _selectedQuestions.removeWhere((q) => q.id == question.id);
+                              }
+                            });
+                          },
+                        );
+                      },
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+            const Divider(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Batal'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _selectedQuestions.isEmpty
+                        ? null
+                        : () => Navigator.pop(context, _selectedQuestions),
+                    child: Text('Import (${_selectedQuestions.length}) Soal'),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
