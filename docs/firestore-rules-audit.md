@@ -18,6 +18,8 @@ Dokumen ini mendokumentasikan hasil audit keamanan komprehensif terhadap berkas 
 *   Aturan tidak mempercayai klaim data dari sisi klien (`request.resource.data`) untuk penentuan peran. 
 *   Sistem membaca dokumen tepercaya di `/users/$(request.auth.uid)` via fungsi `getUserRole()` untuk memastikan peran (`admin`, `guru`, `siswa`) benar-benar terdaftar dan divalidasi oleh sistem.
 *   Akun yang dinonaktifkan (`isActive == false`) secara otomatis kehilangan seluruh hak akses tulis/baca.
+*   **Akses Baca Data Profil Siswa oleh Guru**: Untuk menampilkan informasi nama siswa secara akurat pada dashboard Guru dan halaman hasil ujian, peran Guru (`isGuru()`) diizinkan untuk membaca dokumen di `/users/{userId}` secara terbatas.
+*   **Akses Baca Hasil Ujian oleh Guru**: Untuk memfasilitasi statistik ringkasan dashboard, kueri global Guru terhadap `/exam_results` diizinkan tanpa batasan filter ujian, dengan tetap mengunci akses tulis siswa secara ketat.
 
 ### B. Validasi Skema & Tipe Data (Type Safety)
 *   Setiap koleksi utama didefinisikan dengan fungsi validator skema (contoh: `isValidUser`, `isValidExam`, `isValidQuestion`, `isValidExamSession`, `isValidExamResult`).
@@ -49,4 +51,4 @@ Dokumen ini mendokumentasikan hasil audit keamanan komprehensif terhadap berkas 
 ---
 
 ## 4. Rekomendasi Pemeliharaan
-Aturan saat ini telah berada dalam kondisi optimal dan aman untuk tahap produksi. Tidak diperlukan perubahan kode rules tambahan.
+Aturan saat ini telah disesuaikan secara dinamis agar memperbolehkan Guru membaca data profil dasar siswa dan hasil ujian global demi mendukung UI rendering yang andal, dengan tetap menolak akses tulis (write) dan perubahan data secara ilegal. Sistem tetap berada dalam status sangat aman.
