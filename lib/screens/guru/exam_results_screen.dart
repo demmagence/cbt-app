@@ -7,6 +7,7 @@ import '../../models/exam_model.dart';
 import '../../models/exam_result_model.dart';
 import '../../models/user_model.dart';
 import '../../services/firestore_service.dart';
+import '../../services/csv_export_service.dart';
 import '../../widgets/common/loading_widget.dart';
 import '../../widgets/common/error_widget.dart';
 import '../../widgets/common/empty_state_widget.dart';
@@ -55,6 +56,29 @@ class _ExamResultsViewState extends State<ExamResultsView> {
     return total / results.length;
   }
 
+  void _exportToCsv(
+    ExamModel exam,
+    List<ExamResultModel> results,
+    Map<String, UserModel> studentMap,
+  ) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Menyiapkan berkas ekspor CSV...')),
+      );
+      await CsvExportService().exportAndShareResults(
+        exam: exam,
+        results: results,
+        studentMap: studentMap,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengekspor data: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -63,6 +87,18 @@ class _ExamResultsViewState extends State<ExamResultsView> {
       appBar: AppBar(
         title: const Text('Hasil Ujian'),
         actions: [
+          BlocBuilder<ExamResultsCubit, ExamResultsState>(
+            builder: (context, state) {
+              if (state is ExamResultsLoaded && state.results.isNotEmpty) {
+                return IconButton(
+                  icon: const Icon(Icons.download),
+                  tooltip: 'Ekspor ke CSV',
+                  onPressed: () => _exportToCsv(state.exam, state.results, state.studentMap),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _refresh,
