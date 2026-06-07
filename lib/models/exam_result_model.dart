@@ -51,6 +51,7 @@ class ExamResultModel extends Equatable {
   final DateTime submittedAt;
   final DateTime? gradedAt;
   final String? gradedBy;
+  final int appSwitchCount;
 
   const ExamResultModel({
     required this.id,
@@ -65,6 +66,7 @@ class ExamResultModel extends Equatable {
     required this.submittedAt,
     this.gradedAt,
     this.gradedBy,
+    required this.appSwitchCount,
   });
 
   ExamResultModel copyWith({
@@ -80,6 +82,7 @@ class ExamResultModel extends Equatable {
     DateTime? submittedAt,
     DateTime? gradedAt,
     String? gradedBy,
+    int? appSwitchCount,
   }) {
     return ExamResultModel(
       id: id ?? this.id,
@@ -94,6 +97,7 @@ class ExamResultModel extends Equatable {
       submittedAt: submittedAt ?? this.submittedAt,
       gradedAt: gradedAt ?? this.gradedAt,
       gradedBy: gradedBy ?? this.gradedBy,
+      appSwitchCount: appSwitchCount ?? this.appSwitchCount,
     );
   }
 
@@ -124,6 +128,7 @@ class ExamResultModel extends Equatable {
           ? (json['gradedAt'] as Timestamp).toDate() 
           : json['gradedAt'] != null ? DateTime.tryParse(json['gradedAt'].toString()) : null,
       gradedBy: json['gradedBy'] as String?,
+      appSwitchCount: json['appSwitchCount'] as int? ?? 0,
     );
   }
 
@@ -141,6 +146,7 @@ class ExamResultModel extends Equatable {
       'submittedAt': Timestamp.fromDate(submittedAt),
       'gradedAt': gradedAt != null ? Timestamp.fromDate(gradedAt!) : null,
       'gradedBy': gradedBy,
+      'appSwitchCount': appSwitchCount,
     };
   }
 
@@ -158,5 +164,6 @@ class ExamResultModel extends Equatable {
         submittedAt,
         gradedAt,
         gradedBy,
+        appSwitchCount,
       ];
 }
