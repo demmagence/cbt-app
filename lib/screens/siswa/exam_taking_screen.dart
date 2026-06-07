@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../blocs/auth/auth_bloc.dart';
@@ -7,8 +6,8 @@ import '../../blocs/auth/auth_state.dart';
 import '../../blocs/siswa/exam_session_bloc.dart';
 import '../../blocs/siswa/exam_session_event.dart';
 import '../../blocs/siswa/exam_session_state.dart';
-import '../../models/exam_session_model.dart';
 import '../../models/question_model.dart';
+import '../../services/anti_cheat_manager.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/common/loading_widget.dart';
 import '../../widgets/common/error_widget.dart';
@@ -24,10 +23,9 @@ class ExamTakingScreen extends StatefulWidget {
   State<ExamTakingScreen> createState() => _ExamTakingScreenState();
 }
 
-class _ExamTakingScreenState extends State<ExamTakingScreen>
-    with WidgetsBindingObserver {
+class _ExamTakingScreenState extends State<ExamTakingScreen> {
   late final ExamSessionBloc _bloc;
-  DateTime? _appBackgroundTime;
+  final AntiCheatManager _antiCheat = AntiCheatManager.instance;
   late final PageController _pageController;
   bool _showReview = false;
   bool _timeUpDialogShown = false;
@@ -36,14 +34,33 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-
     _pageController = PageController(initialPage: 0);
 
     _bloc = ExamSessionBloc(
       firestoreService: context.read<FirestoreService>(),
     );
+
+    // Enable anti-cheat (immersive mode + lifecycle observer)
+    _antiCheat.enable();
+    _antiCheat.onAppSwitched((log) {
+      _bloc.add(AppSwitchDetected(log));
+      if (mounted) {
+        final count = _antiCheat.getAppSwitchCount();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Terdeteksi keluar dari aplikasi selama ${log.duration} detik! Pelanggaran ke-$count.',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    });
+    _antiCheat.onResumed(() {
+      _bloc.add(const AppResumed());
+    });
 
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
@@ -53,48 +70,10 @@ class _ExamTakingScreenState extends State<ExamTakingScreen>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    _antiCheat.disable();
     _pageController.dispose();
     _bloc.close();
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-      // User left the app
-      _appBackgroundTime ??= DateTime.now();
-    } else if (state == AppLifecycleState.resumed) {
-      // User returned to the app
-      _bloc.add(const AppResumed());
-      if (_appBackgroundTime != null) {
-        final duration = DateTime.now().difference(_appBackgroundTime!).inSeconds;
-        if (duration > 0) {
-          final log = AppSwitchLog(
-            timestamp: _appBackgroundTime!,
-            duration: duration,
-            type: 'app_switch',
-          );
-          _bloc.add(AppSwitchDetected(log));
-          
-          // Show warning toast/alert
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Terdeteksi keluar dari aplikasi selama $duration detik! Pelanggaran dicatat.',
-                style: const TextStyle(color: Colors.white),
-              ),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 4),
-            ),
-          );
-        }
-        _appBackgroundTime = null;
-      }
-    }
   }
 
 
