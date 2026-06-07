@@ -194,10 +194,7 @@ class _AddQuestionViewState extends State<AddQuestionView> {
                               theme: theme,
                             );
                           },
-                          onReorder: (oldIndex, newIndex) {
-                            if (oldIndex < newIndex) {
-                              newIndex -= 1;
-                            }
+                          onReorderItem: (oldIndex, newIndex) {
                             if (oldIndex == newIndex) return;
 
                             final reordered = List<QuestionModel>.from(questions);
