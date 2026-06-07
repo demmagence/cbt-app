@@ -89,6 +89,13 @@ class AntiCheatManager with WidgetsBindingObserver {
   /// Returns the list of timestamped app switch logs.
   List<AppSwitchLog> getAppSwitchLogs() => List.unmodifiable(_appSwitchLogs);
 
+  /// Re-enforces fullscreen immersive mode.
+  void enforceFullscreen() {
+    if (_isEnabled) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
