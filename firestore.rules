@@ -189,7 +189,7 @@ service cloud.firestore {
 
     function isValidExamResult(data) {
       let hasAllRequired = data.keys().hasAll(['id', 'examId', 'userId', 'sessionId', 'pgScore', 'totalScore', 'gradingStatus', 'submittedAt']);
-      let hasOnlyAllowed = data.keys().hasOnly(['id', 'examId', 'userId', 'sessionId', 'pgScore', 'essayScore', 'totalScore', 'gradingStatus', 'essayGrades', 'submittedAt', 'gradedAt', 'gradedBy']);
+      let hasOnlyAllowed = data.keys().hasOnly(['id', 'examId', 'userId', 'sessionId', 'pgScore', 'essayScore', 'totalScore', 'gradingStatus', 'essayGrades', 'submittedAt', 'gradedAt', 'gradedBy', 'appSwitchCount']);
       
       return hasAllRequired && hasOnlyAllowed &&
              data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
@@ -203,7 +203,8 @@ service cloud.firestore {
              (!('essayGrades' in data) || data.essayGrades is map) &&
              data.submittedAt is timestamp &&
              (!('gradedAt' in data) || data.gradedAt is timestamp) &&
-             (!('gradedBy' in data) || (data.gradedBy is string && data.gradedBy.size() >= 20 && data.gradedBy.size() <= 128));
+             (!('gradedBy' in data) || (data.gradedBy is string && data.gradedBy.size() >= 20 && data.gradedBy.size() <= 128)) &&
+             (!('appSwitchCount' in data) || (data.appSwitchCount is int && data.appSwitchCount >= 0));
     }
 
     function isValidQuestionBankItem(data) {
