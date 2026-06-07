@@ -91,3 +91,12 @@ class AppResumed extends ExamSessionEvent {
   const AppResumed();
 }
 
+class ConnectivityChanged extends ExamSessionEvent {
+  final bool isOffline;
+
+  const ConnectivityChanged({required this.isOffline});
+
+  @override
+  List<Object?> get props => [isOffline];
+}
+

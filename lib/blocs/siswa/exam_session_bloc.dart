@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../models/exam_model.dart';
 import '../../models/exam_session_model.dart';
 import '../../models/question_model.dart';
@@ -12,6 +13,11 @@ import 'exam_session_state.dart';
 class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
   final FirestoreService _firestoreService;
   Timer? _timer;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  bool _pendingSubmit = false;
+  bool _pendingSubmitIsAuto = false;
+  ExamSessionModel? _cachedSession;
+  List<QuestionModel>? _cachedQuestions;
 
   ExamSessionBloc({required FirestoreService firestoreService})
       : _firestoreService = firestoreService,
@@ -26,12 +32,39 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
     on<AppSwitchDetected>(_onAppSwitchDetected);
     on<FlagToggled>(_onFlagToggled);
     on<AppResumed>(_onAppResumed);
+    on<ConnectivityChanged>(_onConnectivityChanged);
+
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
+      final isOffline = results.isEmpty || results.contains(ConnectivityResult.none);
+      add(ConnectivityChanged(isOffline: isOffline));
+    });
   }
 
   @override
   Future<void> close() {
     _timer?.cancel();
+    _connectivitySubscription?.cancel();
     return super.close();
+  }
+
+  void _onConnectivityChanged(ConnectivityChanged event, Emitter<ExamSessionState> emit) {
+    final currentState = state;
+    if (currentState is ExamSessionActive) {
+      emit(currentState.copyWith(isOffline: event.isOffline));
+
+      // If we got back online and there is a pending submission, trigger the submission!
+      if (!event.isOffline && _pendingSubmit) {
+        _pendingSubmit = false;
+        add(ExamSubmitted(isAutoSubmit: _pendingSubmitIsAuto));
+      }
+    } else if (currentState is ExamSessionSubmitting) {
+      if (!event.isOffline && _pendingSubmit) {
+        _pendingSubmit = false;
+        add(ExamSubmitted(isAutoSubmit: _pendingSubmitIsAuto));
+      } else {
+        emit(ExamSessionSubmitting(isOffline: event.isOffline));
+      }
+    }
   }
 
   Future<void> _onExamStarted(ExamStarted event, Emitter<ExamSessionState> emit) async {
@@ -182,6 +215,10 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
         ...session.answers.keys,
       };
 
+      // Check initial connectivity
+      final connectivityResult = await Connectivity().checkConnectivity();
+      final isOffline = connectivityResult.isEmpty || connectivityResult.contains(ConnectivityResult.none);
+
       if (remainingSeconds <= 0) {
         emit(ExamSessionActive(
           exam: exam,
@@ -191,6 +228,7 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
           remainingTime: 0,
           flaggedQuestions: const {},
           visitedQuestions: initialVisited,
+          isOffline: isOffline,
         ));
         add(const ExamSubmitted(isAutoSubmit: true));
         return;
@@ -204,6 +242,7 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
         remainingTime: remainingSeconds,
         flaggedQuestions: const {},
         visitedQuestions: initialVisited,
+        isOffline: isOffline,
       ));
 
       _startTimer();
@@ -347,15 +386,40 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
 
   Future<void> _onExamSubmitted(ExamSubmitted event, Emitter<ExamSessionState> emit) async {
     final currentState = state;
-    if (currentState is! ExamSessionActive) return;
+    
+    if (currentState is ExamSessionActive) {
+      _cachedSession = currentState.session;
+      _cachedQuestions = currentState.questions;
+    }
+
+    if (_cachedSession == null || _cachedQuestions == null) return;
 
     _timer?.cancel();
-    emit(const ExamSessionSubmitting());
+
+    // Check if offline
+    bool isOffline = false;
+    if (currentState is ExamSessionActive) {
+      isOffline = currentState.isOffline;
+    } else if (currentState is ExamSessionSubmitting) {
+      isOffline = currentState.isOffline;
+    } else {
+      final connectivityResult = await Connectivity().checkConnectivity();
+      isOffline = connectivityResult.isEmpty || connectivityResult.contains(ConnectivityResult.none);
+    }
+
+    if (isOffline) {
+      _pendingSubmit = true;
+      _pendingSubmitIsAuto = event.isAutoSubmit;
+      emit(const ExamSessionSubmitting(isOffline: true));
+      return;
+    }
+
+    emit(const ExamSessionSubmitting(isOffline: false));
 
     try {
-      final session = currentState.session;
-      final questions = currentState.questions;
-      final answers = currentState.session.answers;
+      final session = _cachedSession!;
+      final questions = _cachedQuestions!;
+      final answers = session.answers;
 
       // Grade PG questions
       num pgScore = 0;
