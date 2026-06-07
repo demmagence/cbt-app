@@ -1,9 +1,10 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../blocs/auth/auth_bloc.dart';
+import '../../blocs/auth/auth_state.dart';
 import '../../blocs/guru/create_exam_cubit.dart';
 import '../../services/firestore_service.dart';
 import '../../services/exam_code_service.dart';
@@ -118,7 +119,11 @@ class _CreateExamFormState extends State<CreateExamForm> {
         return;
       }
 
-      final String guruId = FirebaseAuth.instance.currentUser?.uid ?? '';
+      final authState = context.read<AuthBloc>().state;
+      String guruId = '';
+      if (authState is AuthAuthenticated) {
+        guruId = authState.user.uid;
+      }
 
       context.read<CreateExamCubit>().createExam(
             title: _titleController.text.trim(),
