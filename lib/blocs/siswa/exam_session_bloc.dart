@@ -404,6 +404,7 @@ class ExamSessionBloc extends Bloc<ExamSessionEvent, ExamSessionState> {
         gradingStatus: hasEssay ? 'pending_essay' : 'graded',
         essayGrades: const {},
         submittedAt: endedAt,
+        appSwitchCount: session.appSwitchCount,
       );
 
       await _firestoreService.addDocument(
