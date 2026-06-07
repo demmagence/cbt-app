@@ -58,10 +58,12 @@ class CsvExportService {
 
     // 5. Share via Native Share
     final xFile = XFile(file.path);
-    await Share.shareXFiles(
-      [xFile],
-      subject: 'Hasil Ujian ${exam.title} (${exam.code})',
-      text: 'Berikut dilampirkan berkas hasil pengerjaan siswa untuk ujian "${exam.title}" dengan kode ${exam.code}.',
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [xFile],
+        subject: 'Hasil Ujian ${exam.title} (${exam.code})',
+        text: 'Berikut dilampirkan berkas hasil pengerjaan siswa untuk ujian "${exam.title}" dengan kode ${exam.code}.',
+      ),
     );
   }
 }

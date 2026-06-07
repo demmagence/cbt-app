@@ -626,25 +626,26 @@ class _QuestionBankFormDialogState extends State<QuestionBankFormDialog> {
                   style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _optionControllers.length,
-                  itemBuilder: (context, index) {
-                    final prefix = String.fromCharCode(65 + index);
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          Radio<int>(
-                            value: index,
-                            groupValue: _correctAnswerIndex,
-                            onChanged: (val) {
-                              setState(() {
-                                _correctAnswerIndex = val;
-                              });
-                            },
-                          ),
+                RadioGroup<int>(
+                  groupValue: _correctAnswerIndex,
+                  onChanged: (val) {
+                    setState(() {
+                      _correctAnswerIndex = val;
+                    });
+                  },
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _optionControllers.length,
+                    itemBuilder: (context, index) {
+                      final prefix = String.fromCharCode(65 + index);
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Radio<int>(
+                              value: index,
+                            ),
                           Expanded(
                             child: TextFormField(
                               controller: _optionControllers[index],
@@ -663,7 +664,8 @@ class _QuestionBankFormDialogState extends State<QuestionBankFormDialog> {
                     );
                   },
                 ),
-                const SizedBox(height: 4),
+              ),
+              const SizedBox(height: 4),
                 TextButton.icon(
                   onPressed: _addOption,
                   icon: const Icon(Icons.add),
