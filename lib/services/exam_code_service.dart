@@ -1,10 +1,14 @@
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import '../models/exam_model.dart';
 import 'firestore_service.dart';
 
 class ExamCodeService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instanceFor(
+    app: Firebase.app(),
+    databaseId: 'cbt-db',
+  );
 
   // Generate a 6-character alphanumeric uppercase code
   String _generateRandomCode() {
