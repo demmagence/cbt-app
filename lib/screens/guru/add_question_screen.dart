@@ -194,10 +194,7 @@ class _AddQuestionViewState extends State<AddQuestionView> {
                               theme: theme,
                             );
                           },
-                          onReorder: (oldIndex, newIndex) {
-                            if (oldIndex < newIndex) {
-                              newIndex -= 1;
-                            }
+                          onReorderItem: (oldIndex, newIndex) {
                             if (oldIndex == newIndex) return;
 
                             final reordered = List<QuestionModel>.from(questions);
@@ -675,25 +672,26 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
                   style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _optionControllers.length,
-                  itemBuilder: (context, index) {
-                    final prefix = String.fromCharCode(65 + index); // A, B, C, ...
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          Radio<int>(
-                            value: index,
-                            groupValue: _correctAnswerIndex,
-                            onChanged: (val) {
-                              setState(() {
-                                _correctAnswerIndex = val;
-                              });
-                            },
-                          ),
+                RadioGroup<int>(
+                  groupValue: _correctAnswerIndex,
+                  onChanged: (val) {
+                    setState(() {
+                      _correctAnswerIndex = val;
+                    });
+                  },
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _optionControllers.length,
+                    itemBuilder: (context, index) {
+                      final prefix = String.fromCharCode(65 + index); // A, B, C, ...
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Radio<int>(
+                              value: index,
+                            ),
                           Expanded(
                             child: TextFormField(
                               controller: _optionControllers[index],
@@ -712,7 +710,8 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
                     );
                   },
                 ),
-                const SizedBox(height: 4),
+              ),
+              const SizedBox(height: 4),
                 TextButton.icon(
                   onPressed: _addOption,
                   icon: const Icon(Icons.add),
