@@ -243,7 +243,7 @@ service cloud.firestore {
                      (isGuru() && resource.data.createdBy == request.auth.uid) ||
                      (isSiswa() && resource.data.isActive == true);
       allow create: if (isAdmin() && isValidExam(request.resource.data)) ||
-                       (isGuru() && request.resource.data.createdBy == request.auth.uid && isValidExam(request.resource.data));
+                       (isGuru() && request.resource.data.createdBy == request.auth.uid);
       allow update: if (isAdmin() && isValidExam(request.resource.data)) ||
                        (isGuru() && 
                          resource.data.createdBy == request.auth.uid && 
