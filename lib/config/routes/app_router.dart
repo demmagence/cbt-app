@@ -148,68 +148,90 @@ class AppRouter {
               path: '/guru/dashboard',
               builder: (context, state) => const GuruDashboardScreen(),
             ),
-            GoRoute(
-              path: '/guru/exams',
-              builder: (context, state) => const ExamListScreen(),
-            ),
-            GoRoute(
-              path: '/guru/exams/create',
-              builder: (context, state) => const CreateExamScreen(),
-            ),
-            GoRoute(
-              path: '/guru/exams/:id/edit',
-              builder: (context, state) {
-                final examId = state.pathParameters['id'] ?? '';
-                return EditExamScreen(examId: examId);
-              },
-            ),
-            GoRoute(
-              path: '/guru/exams/:id/questions',
-              builder: (context, state) {
-                final examId = state.pathParameters['id'] ?? '';
-                return AddQuestionScreen(examId: examId);
-              },
-            ),
-            GoRoute(
-              path: '/guru/question-bank',
-              builder: (context, state) => const QuestionBankScreen(),
-            ),
-            GoRoute(
-              path: '/guru/results',
-              builder: (context, state) => const ExamResultsScreen(examId: ''),
-            ),
-            GoRoute(
-              path: '/guru/results/:examId',
-              builder: (context, state) {
-                final examId = state.pathParameters['examId'] ?? '';
-                return ExamResultsScreen(examId: examId);
-              },
-            ),
-            GoRoute(
-              path: '/guru/results/:examId/:userId',
-              builder: (context, state) {
-                final examId = state.pathParameters['examId'] ?? '';
-                final userId = state.pathParameters['userId'] ?? '';
-                return StudentResultDetailScreen(examId: examId, userId: userId);
-              },
-            ),
-            GoRoute(
-              path: '/guru/grading',
-              builder: (context, state) => const EssayGradingScreen(),
-            ),
-            GoRoute(
-              path: '/guru/grading/:examId/:userId',
-              builder: (context, state) {
-                final examId = state.pathParameters['examId'] ?? '';
-                final userId = state.pathParameters['userId'] ?? '';
-                return EssayGradingDetailScreen(examId: examId, userId: userId);
-              },
-            ),
-            GoRoute(
-              path: '/guru/monitoring',
-              builder: (context, state) => const MonitoringScreen(),
-            ),
           ],
+        ),
+
+        // Fullscreen Create Exam Route
+        GoRoute(
+          path: '/guru/exams/create',
+          builder: (context, state) => const CreateExamScreen(),
+        ),
+
+        // Fullscreen Manage Exam Questions Route
+        GoRoute(
+          path: '/guru/exams/:id/questions',
+          builder: (context, state) {
+            final examId = state.pathParameters['id'] ?? '';
+            return AddQuestionScreen(examId: examId);
+          },
+        ),
+
+        // Fullscreen Exam List Route
+        GoRoute(
+          path: '/guru/exams',
+          builder: (context, state) => const ExamListScreen(),
+        ),
+
+        // Fullscreen Edit Exam Route
+        GoRoute(
+          path: '/guru/exams/:id/edit',
+          builder: (context, state) {
+            final examId = state.pathParameters['id'] ?? '';
+            return EditExamScreen(examId: examId);
+          },
+        ),
+
+        // Fullscreen Question Bank Route
+        GoRoute(
+          path: '/guru/question-bank',
+          builder: (context, state) => const QuestionBankScreen(),
+        ),
+
+        // Redirect base results path to exams list page
+        GoRoute(
+          path: '/guru/results',
+          redirect: (context, state) => '/guru/exams',
+        ),
+
+        // Fullscreen Exam Results Details Route
+        GoRoute(
+          path: '/guru/results/:examId',
+          builder: (context, state) {
+            final examId = state.pathParameters['examId'] ?? '';
+            return ExamResultsScreen(examId: examId);
+          },
+        ),
+
+        // Fullscreen Student Result Detail Route
+        GoRoute(
+          path: '/guru/results/:examId/:userId',
+          builder: (context, state) {
+            final examId = state.pathParameters['examId'] ?? '';
+            final userId = state.pathParameters['userId'] ?? '';
+            return StudentResultDetailScreen(examId: examId, userId: userId);
+          },
+        ),
+
+        // Fullscreen Essay Grading Route
+        GoRoute(
+          path: '/guru/grading',
+          builder: (context, state) => const EssayGradingScreen(),
+        ),
+
+        // Fullscreen Essay Grading Detail Route
+        GoRoute(
+          path: '/guru/grading/:examId/:userId',
+          builder: (context, state) {
+            final examId = state.pathParameters['examId'] ?? '';
+            final userId = state.pathParameters['userId'] ?? '';
+            return EssayGradingDetailScreen(examId: examId, userId: userId);
+          },
+        ),
+
+        // Fullscreen Live Monitoring Route
+        GoRoute(
+          path: '/guru/monitoring',
+          builder: (context, state) => const MonitoringScreen(),
         ),
 
         // Siswa Shell Route (Persistent Bottom Navigation Bar)
