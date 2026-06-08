@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_state.dart';
@@ -111,6 +112,16 @@ class _QuestionBankViewState extends State<QuestionBankView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bank Soal'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/guru/dashboard');
+            }
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
