@@ -145,7 +145,7 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Halo, $name! 👋',
+          'Halo, $name!',
           style: theme.textTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.primary,
