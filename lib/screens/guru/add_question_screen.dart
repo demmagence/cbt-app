@@ -201,18 +201,15 @@ class _AddQuestionViewState extends State<AddQuestionView> {
                               theme: theme,
                             );
                           },
-                          onReorder: (oldIndex, newIndex) {
-                            if (oldIndex < newIndex) {
-                              newIndex -= 1;
-                            }
-                            if (oldIndex == newIndex) return;
+                          onReorderItem: (oldIndex, newIndex) {
+                             if (oldIndex == newIndex) return;
 
-                            final reordered = List<QuestionModel>.from(questions);
-                            final item = reordered.removeAt(oldIndex);
-                            reordered.insert(newIndex, item);
+                             final reordered = List<QuestionModel>.from(questions);
+                             final item = reordered.removeAt(oldIndex);
+                             reordered.insert(newIndex, item);
 
-                            context.read<AddQuestionCubit>().reorderQuestions(widget.examId, reordered);
-                          },
+                             context.read<AddQuestionCubit>().reorderQuestions(widget.examId, reordered);
+                           },
                         ),
                 ),
               ],
