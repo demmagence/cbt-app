@@ -158,7 +158,7 @@ void main() {
 
       // Verify Guru Dashboard is displayed
       expect(find.text('CBT Guru Portal'), findsOneWidget);
-      expect(find.text('Halo, Bapak Guru Bama! 👋'), findsOneWidget);
+      expect(find.text('Halo, Bapak Guru Bama!'), findsOneWidget);
 
       // Sign out by opening Drawer
       await tester.tap(find.byIcon(Icons.menu));

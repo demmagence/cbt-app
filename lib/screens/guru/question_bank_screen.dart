@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_state.dart';
@@ -111,12 +112,16 @@ class _QuestionBankViewState extends State<QuestionBankView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bank Soal'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refresh,
-          ),
-        ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/guru/dashboard');
+            }
+          },
+        ),
       ),
       body: Column(
         children: [
@@ -230,9 +235,18 @@ class _QuestionBankViewState extends State<QuestionBankView> {
                   }
 
                   if (filteredQuestions.isEmpty) {
-                    return const EmptyStateWidget(
-                      title: 'Soal Tidak Ditemukan',
-                      description: 'Tidak ada soal yang cocok dengan pencarian atau filter Anda.',
+                    return RefreshIndicator(
+                      onRefresh: _refresh,
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: const [
+                          SizedBox(height: 100),
+                          EmptyStateWidget(
+                            title: 'Soal Tidak Ditemukan',
+                            description: 'Tidak ada soal yang cocok dengan pencarian atau filter Anda.',
+                          ),
+                        ],
+                      ),
                     );
                   }
 

@@ -107,12 +107,16 @@ class _ExamListViewState extends State<ExamListView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daftar Ujian'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refresh,
-          ),
-        ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/guru/dashboard');
+            }
+          },
+        ),
       ),
       body: BlocListener<ExamListCubit, ExamListState>(
         listener: (context, state) {
@@ -139,9 +143,18 @@ class _ExamListViewState extends State<ExamListView> {
               final exams = state.exams;
 
               if (exams.isEmpty) {
-                return const EmptyStateWidget(
-                  title: 'Belum Ada Ujian',
-                  description: 'Anda belum membuat ujian apa pun. Klik tombol + di bawah untuk membuat ujian pertama.',
+                return RefreshIndicator(
+                  onRefresh: _refresh,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: const [
+                      SizedBox(height: 100),
+                      EmptyStateWidget(
+                        title: 'Belum Ada Ujian',
+                        description: 'Anda belum membuat ujian apa pun. Klik tombol + di bawah untuk membuat ujian pertama.',
+                      ),
+                    ],
+                  ),
                 );
               }
 

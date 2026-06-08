@@ -225,6 +225,16 @@ class _CreateExamFormState extends State<CreateExamForm> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Buat Ujian Baru'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/guru/dashboard');
+            }
+          },
+        ),
       ),
       body: BlocListener<CreateExamCubit, CreateExamState>(
         listener: (context, state) {
