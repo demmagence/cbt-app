@@ -1,1 +1,0 @@
-// Admin widgets placeholder
