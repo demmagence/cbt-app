@@ -200,10 +200,10 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
           icon: Icons.pending_actions_outlined,
           color: state.pendingGradingCount > 0
               ? theme.colorScheme.errorContainer
-              : theme.colorScheme.surfaceContainerHighest,
+              : theme.colorScheme.secondaryContainer,
           textColor: state.pendingGradingCount > 0
               ? theme.colorScheme.onErrorContainer
-              : theme.colorScheme.onSurfaceVariant,
+              : theme.colorScheme.onSecondaryContainer,
         ),
       ],
     );
