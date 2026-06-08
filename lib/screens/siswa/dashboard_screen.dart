@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_state.dart';
-import '../../blocs/auth/auth_event.dart';
 import '../../blocs/siswa/exam_list_cubit.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/common/loading_widget.dart';
@@ -63,34 +62,6 @@ class _SiswaDashboardScreenState extends State<SiswaDashboardScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Dashboard Siswa'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout_rounded),
-              tooltip: 'Keluar',
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Keluar'),
-                    content: const Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Batal'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          context.read<AuthBloc>().add(const AuthLogoutRequested());
-                        },
-                        child: const Text('Keluar', style: TextStyle(color: Colors.red)),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ],
         ),
         body: RefreshIndicator(
           onRefresh: () => _examListCubit.loadExams(user.uid),
