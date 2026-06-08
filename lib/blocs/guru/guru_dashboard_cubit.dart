@@ -75,17 +75,20 @@ class GuruDashboardCubit extends Cubit<GuruDashboardState> {
         queryBuilder: (query) => query.where('createdBy', isEqualTo: guruId),
       );
 
-      // 2. Fetch all exam results to calculate participations and grading stats
-      final examResults = await _firestoreService.getCollection<ExamResultModel>(
-        path: FirestoreService.examResultsPath,
-        fromJson: (json, id) => ExamResultModel.fromJson(json, id: id),
-      );
-
-      // Create a set of guru's exam IDs for fast lookup
-      final guruExamIds = exams.map((e) => e.id).toSet();
-
-      // Filter results for exams belonging to this guru
-      final guruExamResults = examResults.where((r) => guruExamIds.contains(r.examId)).toList();
+      // 2. Fetch exam results for each of the guru's exams in parallel to satisfy Firestore security rules
+      final List<ExamResultModel> guruExamResults = [];
+      if (exams.isNotEmpty) {
+        final resultsList = await Future.wait(
+          exams.map((exam) => _firestoreService.getCollection<ExamResultModel>(
+            path: FirestoreService.examResultsPath,
+            fromJson: (json, id) => ExamResultModel.fromJson(json, id: id),
+            queryBuilder: (query) => query.where('examId', isEqualTo: exam.id),
+          ))
+        );
+        for (final list in resultsList) {
+          guruExamResults.addAll(list);
+        }
+      }
 
       // Calculate stats
       final totalExams = exams.length;

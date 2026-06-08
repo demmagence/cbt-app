@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../blocs/guru/edit_exam_cubit.dart';
 import '../../services/firestore_service.dart';
@@ -138,6 +139,16 @@ class _EditExamFormState extends State<EditExamForm> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Ujian'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/guru/dashboard');
+            }
+          },
+        ),
       ),
       body: BlocConsumer<EditExamCubit, EditExamState>(
         listener: (context, state) {

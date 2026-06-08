@@ -241,6 +241,10 @@ class _EditUserViewState extends State<EditUserView> {
                           value: 'guru',
                           child: Text('Guru'),
                         ),
+                        DropdownMenuItem(
+                          value: 'admin',
+                          child: Text('Admin'),
+                        ),
                       ],
                       onChanged: isSubmitting
                           ? null

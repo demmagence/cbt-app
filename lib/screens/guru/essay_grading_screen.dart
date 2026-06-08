@@ -62,12 +62,16 @@ class _EssayGradingListViewState extends State<EssayGradingListView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Koreksi Essay'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refresh,
-          ),
-        ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/guru/dashboard');
+            }
+          },
+        ),
       ),
       body: BlocBuilder<EssayGradingListCubit, EssayGradingListState>(
         builder: (context, state) {
@@ -99,9 +103,18 @@ class _EssayGradingListViewState extends State<EssayGradingListView> {
             }
 
             if (state.pendingResults.isEmpty) {
-              return const EmptyStateWidget(
-                title: 'Tidak Ada Koreksi',
-                description: 'Seluruh pengerjaan essay siswa telah dinilai atau belum ada siswa yang mengumpulkan ujian essay.',
+              return RefreshIndicator(
+                onRefresh: _refresh,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    SizedBox(height: 100),
+                    EmptyStateWidget(
+                      title: 'Tidak Ada Koreksi',
+                      description: 'Seluruh pengerjaan essay siswa telah dinilai atau belum ada siswa yang mengumpulkan ujian essay.',
+                    ),
+                  ],
+                ),
               );
             }
 
@@ -144,9 +157,15 @@ class _EssayGradingListViewState extends State<EssayGradingListView> {
                   // Results List
                   Expanded(
                     child: filteredResults.isEmpty
-                        ? const EmptyStateWidget(
-                            title: 'Tidak Ada Hasil Pencarian',
-                            description: 'Tidak ada data koreksi pending yang cocok dengan kata kunci pencarian Anda.',
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: const [
+                              SizedBox(height: 60),
+                              EmptyStateWidget(
+                                title: 'Tidak Ada Hasil Pencarian',
+                                description: 'Tidak ada data koreksi pending yang cocok dengan kata kunci pencarian Anda.',
+                              ),
+                            ],
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.symmetric(horizontal: 16.0),

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_state.dart';
@@ -87,12 +88,16 @@ class _MonitoringViewState extends State<MonitoringView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Live Monitoring Ujian'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refresh,
-          ),
-        ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/guru/dashboard');
+            }
+          },
+        ),
       ),
       body: BlocBuilder<MonitoringCubit, MonitoringState>(
         builder: (context, state) {
@@ -122,6 +127,7 @@ class _MonitoringViewState extends State<MonitoringView> {
                   padding: const EdgeInsets.all(16.0),
                   child: DropdownButtonFormField<String>(
                     initialValue: selectedExamId,
+                    isExpanded: true,
                     decoration: InputDecoration(
                       labelText: 'Pilih Ujian Aktif',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -141,21 +147,44 @@ class _MonitoringViewState extends State<MonitoringView> {
                         context.read<MonitoringCubit>().selectExam(val);
                       }
                     },
-                    hint: const Text('Pilih salah satu ujian aktif untuk dipantau'),
+                    hint: const Text(
+                      'Pilih salah satu ujian aktif untuk dipantau',
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
 
                 // Sessions List / Placeholder
                 Expanded(
                   child: selectedExamId == null
-                      ? const EmptyStateWidget(
-                          title: 'Ujian Belum Dipilih',
-                          description: 'Silakan pilih salah satu ujian aktif di atas untuk memulai live monitoring.',
+                      ? RefreshIndicator(
+                          onRefresh: _refresh,
+                          child: ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: const [
+                              SizedBox(height: 60),
+                              EmptyStateWidget(
+                                title: 'Ujian Belum Dipilih',
+                                description: 'Silakan pilih salah satu ujian aktif di atas untuk memulai live monitoring.',
+                              ),
+                            ],
+                          ),
                         )
                       : sessions.isEmpty
-                          ? const EmptyStateWidget(
-                              title: 'Belum Ada Peserta',
-                              description: 'Tidak ada siswa yang sedang atau telah memulai ujian ini.',
+                          ? RefreshIndicator(
+                              onRefresh: () async {
+                                context.read<MonitoringCubit>().selectExam(selectedExamId);
+                              },
+                              child: ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: const [
+                                  SizedBox(height: 60),
+                                  EmptyStateWidget(
+                                    title: 'Belum Ada Peserta',
+                                    description: 'Tidak ada siswa yang sedang atau telah memulai ujian ini.',
+                                  ),
+                                ],
+                              ),
                             )
                           : RefreshIndicator(
                               onRefresh: () async {
