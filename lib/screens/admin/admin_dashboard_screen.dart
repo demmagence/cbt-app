@@ -500,7 +500,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                     padding: EdgeInsets.zero,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: state.recentActivities.length,
+                    itemCount: state.recentActivities.length > 8 ? 8 : state.recentActivities.length,
                     separatorBuilder: (context, index) => Divider(
                       height: 16,
                       color: theme.colorScheme.outline.withValues(alpha: 0.1),
