@@ -294,37 +294,41 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
 
                               // Flag / Ragu-ragu
                               Flexible(
-                                child: InkWell(
-                                  onTap: () => _bloc.add(FlagToggled(question.id)),
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: isFlagged ? Colors.amber.withValues(alpha: 0.15) : Colors.transparent,
-                                      border: Border.all(
-                                        color: isFlagged ? Colors.amber : theme.colorScheme.outline.withValues(alpha: 0.3),
+                                child: SizedBox(
+                                  height: 48,
+                                  child: InkWell(
+                                    onTap: () => _bloc.add(FlagToggled(question.id)),
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                                      decoration: BoxDecoration(
+                                        color: isFlagged ? Colors.amber.withValues(alpha: 0.15) : Colors.transparent,
+                                        border: Border.all(
+                                          color: isFlagged ? Colors.amber : theme.colorScheme.outline.withValues(alpha: 0.3),
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            isFlagged ? Icons.warning_rounded : Icons.warning_amber_rounded,
-                                            color: isFlagged ? Colors.amber : theme.colorScheme.onSurfaceVariant,
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'Ragu-Ragu',
-                                            style: theme.textTheme.bodyMedium?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                              color: isFlagged ? Colors.amber[800] : theme.colorScheme.onSurfaceVariant,
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              isFlagged ? Icons.warning_rounded : Icons.warning_amber_rounded,
+                                              color: isFlagged ? Colors.amber : theme.colorScheme.onSurfaceVariant,
+                                              size: 20,
                                             ),
-                                          ),
-                                        ],
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Ragu-Ragu',
+                                              style: theme.textTheme.bodyMedium?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                                color: isFlagged ? Colors.amber[800] : theme.colorScheme.onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
