@@ -40,7 +40,13 @@ class _AdminStatisticsViewState extends State<AdminStatisticsView> {
         title: const Text('Statistik Analitis'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/admin/dashboard'),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/admin/dashboard');
+            }
+          },
         ),
       ),
       body: RefreshIndicator(
