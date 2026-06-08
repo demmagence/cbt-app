@@ -122,12 +122,6 @@ class _QuestionBankViewState extends State<QuestionBankView> {
             }
           },
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refresh,
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -241,9 +235,18 @@ class _QuestionBankViewState extends State<QuestionBankView> {
                   }
 
                   if (filteredQuestions.isEmpty) {
-                    return const EmptyStateWidget(
-                      title: 'Soal Tidak Ditemukan',
-                      description: 'Tidak ada soal yang cocok dengan pencarian atau filter Anda.',
+                    return RefreshIndicator(
+                      onRefresh: _refresh,
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: const [
+                          SizedBox(height: 100),
+                          EmptyStateWidget(
+                            title: 'Soal Tidak Ditemukan',
+                            description: 'Tidak ada soal yang cocok dengan pencarian atau filter Anda.',
+                          ),
+                        ],
+                      ),
                     );
                   }
 

@@ -109,10 +109,6 @@ class _ExamResultsViewState extends State<ExamResultsView> {
               return const SizedBox.shrink();
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refresh,
-          ),
         ],
       ),
       body: BlocBuilder<ExamResultsCubit, ExamResultsState>(
@@ -238,9 +234,15 @@ class _ExamResultsViewState extends State<ExamResultsView> {
                   // Results List
                   Expanded(
                     child: filteredResults.isEmpty
-                        ? const EmptyStateWidget(
-                            title: 'Tidak Ada Hasil',
-                            description: 'Tidak ada data pengerjaan siswa yang sesuai dengan filter pencarian.',
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: const [
+                              SizedBox(height: 60),
+                              EmptyStateWidget(
+                                title: 'Tidak Ada Hasil',
+                                description: 'Tidak ada data pengerjaan siswa yang sesuai dengan filter pencarian.',
+                              ),
+                            ],
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.symmetric(horizontal: 16.0),

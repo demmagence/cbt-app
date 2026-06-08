@@ -140,10 +140,6 @@ class _AddQuestionViewState extends State<AddQuestionView> {
             tooltip: 'Import dari Bank Soal',
             onPressed: _openImportDialog,
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refresh,
-          ),
         ],
       ),
       body: BlocBuilder<AddQuestionCubit, AddQuestionState>(
@@ -189,31 +185,43 @@ class _AddQuestionViewState extends State<AddQuestionView> {
 
                 Expanded(
                   child: questions.isEmpty
-                      ? const EmptyStateWidget(
-                          title: 'Belum Ada Soal',
-                          description: 'Tambahkan soal pilihan ganda atau essay pertama Anda menggunakan tombol di bawah.',
+                      ? RefreshIndicator(
+                          onRefresh: _refresh,
+                          child: ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: const [
+                              SizedBox(height: 100),
+                              EmptyStateWidget(
+                                title: 'Belum Ada Soal',
+                                description: 'Tambahkan soal pilihan ganda atau essay pertama Anda menggunakan tombol di bawah.',
+                              ),
+                            ],
+                          ),
                         )
-                      : ReorderableListView.builder(
-                          padding: const EdgeInsets.all(16.0),
-                          itemCount: questions.length,
-                          itemBuilder: (context, index) {
-                            final question = questions[index];
-                            return _buildQuestionCard(
-                              key: ValueKey(question.id),
-                              question: question,
-                              index: index,
-                              theme: theme,
-                            );
-                          },
-                          onReorderItem: (oldIndex, newIndex) {
-                            if (oldIndex == newIndex) return;
+                      : RefreshIndicator(
+                          onRefresh: _refresh,
+                          child: ReorderableListView.builder(
+                            padding: const EdgeInsets.all(16.0),
+                            itemCount: questions.length,
+                            itemBuilder: (context, index) {
+                              final question = questions[index];
+                              return _buildQuestionCard(
+                                key: ValueKey(question.id),
+                                question: question,
+                                index: index,
+                                theme: theme,
+                              );
+                            },
+                            onReorderItem: (oldIndex, newIndex) {
+                              if (oldIndex == newIndex) return;
 
-                            final reordered = List<QuestionModel>.from(questions);
-                            final item = reordered.removeAt(oldIndex);
-                            reordered.insert(newIndex, item);
+                              final reordered = List<QuestionModel>.from(questions);
+                              final item = reordered.removeAt(oldIndex);
+                              reordered.insert(newIndex, item);
 
-                            context.read<AddQuestionCubit>().reorderQuestions(widget.examId, reordered);
-                          },
+                              context.read<AddQuestionCubit>().reorderQuestions(widget.examId, reordered);
+                            },
+                          ),
                         ),
                 ),
               ],
@@ -343,23 +351,32 @@ class _AddQuestionViewState extends State<AddQuestionView> {
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.edit_outlined, size: 20),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                  style: IconButton.styleFrom(
+                    minimumSize: Size.zero,
+                    padding: const EdgeInsets.all(6),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                   onPressed: () => _openQuestionForm(question: question, nextOrder: index),
                   tooltip: 'Edit Soal',
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 4),
                 IconButton(
                   icon: Icon(Icons.delete_outline, size: 20, color: theme.colorScheme.error),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                  style: IconButton.styleFrom(
+                    minimumSize: Size.zero,
+                    padding: const EdgeInsets.all(6),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                   onPressed: () => _confirmDelete(question.id),
                   tooltip: 'Hapus Soal',
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
                 ReorderableDragStartListener(
                   index: index,
-                  child: Icon(Icons.drag_handle, color: theme.colorScheme.onSurfaceVariant),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6.0),
+                    child: Icon(Icons.drag_handle, color: theme.colorScheme.onSurfaceVariant, size: 20),
+                  ),
                 ),
               ],
             ),

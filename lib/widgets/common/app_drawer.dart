@@ -124,48 +124,7 @@ class AppDrawer extends StatelessWidget {
   }
 
   List<Widget> _buildGuruMenu(BuildContext context) {
-    return [
-      ListTile(
-        leading: const Icon(Icons.dashboard),
-        title: const Text('Dashboard'),
-        onTap: () {
-          Navigator.pop(context);
-          context.go('/guru/dashboard');
-        },
-      ),
-      ListTile(
-        leading: const Icon(Icons.assignment),
-        title: const Text('Daftar Ujian'),
-        onTap: () {
-          Navigator.pop(context);
-          context.go('/guru/exams');
-        },
-      ),
-      ListTile(
-        leading: const Icon(Icons.book),
-        title: const Text('Bank Soal'),
-        onTap: () {
-          Navigator.pop(context);
-          context.go('/guru/question-bank');
-        },
-      ),
-      ListTile(
-        leading: const Icon(Icons.grade),
-        title: const Text('Penilaian Essay'),
-        onTap: () {
-          Navigator.pop(context);
-          context.go('/guru/grading');
-        },
-      ),
-      ListTile(
-        leading: const Icon(Icons.live_tv),
-        title: const Text('Monitoring Sesi'),
-        onTap: () {
-          Navigator.pop(context);
-          context.go('/guru/monitoring');
-        },
-      ),
-    ];
+    return const [];
   }
 
   List<Widget> _buildSiswaMenu(BuildContext context) {

@@ -98,12 +98,6 @@ class _MonitoringViewState extends State<MonitoringView> {
             }
           },
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refresh,
-          ),
-        ],
       ),
       body: BlocBuilder<MonitoringCubit, MonitoringState>(
         builder: (context, state) {
@@ -163,14 +157,34 @@ class _MonitoringViewState extends State<MonitoringView> {
                 // Sessions List / Placeholder
                 Expanded(
                   child: selectedExamId == null
-                      ? const EmptyStateWidget(
-                          title: 'Ujian Belum Dipilih',
-                          description: 'Silakan pilih salah satu ujian aktif di atas untuk memulai live monitoring.',
+                      ? RefreshIndicator(
+                          onRefresh: _refresh,
+                          child: ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: const [
+                              SizedBox(height: 60),
+                              EmptyStateWidget(
+                                title: 'Ujian Belum Dipilih',
+                                description: 'Silakan pilih salah satu ujian aktif di atas untuk memulai live monitoring.',
+                              ),
+                            ],
+                          ),
                         )
                       : sessions.isEmpty
-                          ? const EmptyStateWidget(
-                              title: 'Belum Ada Peserta',
-                              description: 'Tidak ada siswa yang sedang atau telah memulai ujian ini.',
+                          ? RefreshIndicator(
+                              onRefresh: () async {
+                                context.read<MonitoringCubit>().selectExam(selectedExamId);
+                              },
+                              child: ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: const [
+                                  SizedBox(height: 60),
+                                  EmptyStateWidget(
+                                    title: 'Belum Ada Peserta',
+                                    description: 'Tidak ada siswa yang sedang atau telah memulai ujian ini.',
+                                  ),
+                                ],
+                              ),
                             )
                           : RefreshIndicator(
                               onRefresh: () async {
