@@ -276,70 +276,91 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               // Previous
-                              OutlinedButton.icon(
-                                style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size(100, 48),
+                              Flexible(
+                                child: OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    minimumSize: const Size(60, 48),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  ),
+                                  onPressed: isFirst ? null : () => _bloc.add(QuestionNavigated(state.currentIndex - 1)),
+                                  icon: const Icon(Icons.chevron_left_rounded, size: 20),
+                                  label: const FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text('Sebelumnya'),
+                                  ),
                                 ),
-                                onPressed: isFirst ? null : () => _bloc.add(QuestionNavigated(state.currentIndex - 1)),
-                                icon: const Icon(Icons.chevron_left_rounded),
-                                label: const Text('Sebelumnya'),
                               ),
+                              const SizedBox(width: 4),
 
                               // Flag / Ragu-ragu
-                              InkWell(
-                                onTap: () => _bloc.add(FlagToggled(question.id)),
-                                borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: isFlagged ? Colors.amber.withValues(alpha: 0.15) : Colors.transparent,
-                                    border: Border.all(
-                                      color: isFlagged ? Colors.amber : theme.colorScheme.outline.withValues(alpha: 0.3),
+                              Flexible(
+                                child: InkWell(
+                                  onTap: () => _bloc.add(FlagToggled(question.id)),
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: isFlagged ? Colors.amber.withValues(alpha: 0.15) : Colors.transparent,
+                                      border: Border.all(
+                                        color: isFlagged ? Colors.amber : theme.colorScheme.outline.withValues(alpha: 0.3),
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        isFlagged ? Icons.warning_rounded : Icons.warning_amber_rounded,
-                                        color: isFlagged ? Colors.amber : theme.colorScheme.onSurfaceVariant,
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            isFlagged ? Icons.warning_rounded : Icons.warning_amber_rounded,
+                                            color: isFlagged ? Colors.amber : theme.colorScheme.onSurfaceVariant,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Ragu-Ragu',
+                                            style: theme.textTheme.bodyMedium?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                              color: isFlagged ? Colors.amber[800] : theme.colorScheme.onSurfaceVariant,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Ragu-Ragu',
-                                        style: theme.textTheme.bodyMedium?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          color: isFlagged ? Colors.amber[800] : theme.colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
                                 ),
                               ),
+                              const SizedBox(width: 4),
 
                               // Next / Selesai
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: isLast ? Colors.green : theme.colorScheme.primary,
-                                  foregroundColor: Colors.white,
-                                  minimumSize: const Size(100, 48),
-                                ),
-                                 onPressed: () {
-                                   if (isLast) {
-                                     setState(() {
-                                       _showReview = true;
-                                     });
-                                   } else {
-                                     _bloc.add(QuestionNavigated(state.currentIndex + 1));
-                                   }
-                                 },
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(isLast ? 'Selesai' : 'Berikutnya'),
-                                    const SizedBox(width: 4),
-                                    Icon(isLast ? Icons.check_circle_outline : Icons.chevron_right_rounded),
-                                  ],
+                              Flexible(
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isLast ? Colors.green : theme.colorScheme.primary,
+                                    foregroundColor: Colors.white,
+                                    minimumSize: const Size(60, 48),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  ),
+                                  onPressed: () {
+                                    if (isLast) {
+                                      setState(() {
+                                        _showReview = true;
+                                      });
+                                    } else {
+                                      _bloc.add(QuestionNavigated(state.currentIndex + 1));
+                                    }
+                                  },
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(isLast ? 'Selesai' : 'Berikutnya'),
+                                        const SizedBox(width: 4),
+                                        Icon(isLast ? Icons.check_circle_outline : Icons.chevron_right_rounded, size: 20),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
