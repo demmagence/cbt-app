@@ -93,20 +93,11 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
                     const SizedBox(height: 28),
 
                     // Recent Exams Section Header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Ujian Terbaru',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => context.go('/guru/exams'),
-                          child: const Text('Lihat Semua'),
-                        ),
-                      ],
+                    Text(
+                      'Ujian Terbaru',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 12),
 
@@ -280,6 +271,16 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
             Expanded(
               child: _buildActionButton(
                 context: context,
+                label: 'Daftar Ujian',
+                icon: Icons.assignment_outlined,
+                color: theme.colorScheme.primary,
+                onTap: () => context.go('/guru/exams'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildActionButton(
+                context: context,
                 label: 'Buat Ujian',
                 icon: Icons.add_box_outlined,
                 color: theme.colorScheme.primary,
@@ -296,14 +297,28 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
                 onTap: () => context.go('/guru/question-bank'),
               ),
             ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionButton(
+                context: context,
+                label: 'Penilaian Essay',
+                icon: Icons.grade_outlined,
+                color: theme.colorScheme.tertiary,
+                onTap: () => context.go('/guru/grading'),
+              ),
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: _buildActionButton(
                 context: context,
-                label: 'Lihat Hasil',
-                icon: Icons.grade_outlined,
-                color: theme.colorScheme.tertiary,
-                onTap: () => context.go('/guru/results'),
+                label: 'Monitoring Sesi',
+                icon: Icons.live_tv_outlined,
+                color: Colors.orange,
+                onTap: () => context.go('/guru/monitoring'),
               ),
             ),
           ],
@@ -322,6 +337,7 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
     final theme = Theme.of(context);
     return Card(
       elevation: 0,
+      margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: theme.colorScheme.outlineVariant),
@@ -330,8 +346,9 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 4.0),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, color: color, size: 28),
               const SizedBox(height: 8),
@@ -342,6 +359,8 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
                   color: theme.colorScheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
