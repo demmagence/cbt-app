@@ -114,10 +114,6 @@ class AppRouter {
               builder: (context, state) => const UserManagementScreen(),
             ),
             GoRoute(
-              path: '/admin/users/create',
-              builder: (context, state) => const CreateUserScreen(),
-            ),
-            GoRoute(
               path: '/admin/users/:uid/edit',
               builder: (context, state) {
                 final uid = state.pathParameters['uid'] ?? '';
@@ -130,6 +126,12 @@ class AppRouter {
               builder: (context, state) => const StatisticsScreen(),
             ),
           ],
+        ),
+
+        // Fullscreen Create User Route
+        GoRoute(
+          path: '/admin/users/create',
+          builder: (context, state) => const CreateUserScreen(),
         ),
 
         // Guru Shell Route (Persistent Navigation Drawer)
