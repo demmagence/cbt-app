@@ -185,46 +185,34 @@ class _AddQuestionViewState extends State<AddQuestionView> {
 
                 Expanded(
                   child: questions.isEmpty
-                      ? RefreshIndicator(
-                          onRefresh: _refresh,
-                          child: ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            children: const [
-                              SizedBox(height: 100),
-                              EmptyStateWidget(
-                                title: 'Belum Ada Soal',
-                                description: 'Tambahkan soal pilihan ganda atau essay pertama Anda menggunakan tombol di bawah.',
-                              ),
-                            ],
-                          ),
+                      ? const EmptyStateWidget(
+                          title: 'Belum Ada Soal',
+                          description: 'Tambahkan soal pilihan ganda atau essay pertama Anda menggunakan tombol di bawah.',
                         )
-                      : RefreshIndicator(
-                          onRefresh: _refresh,
-                          child: ReorderableListView.builder(
-                            padding: const EdgeInsets.all(16.0),
-                            itemCount: questions.length,
-                            itemBuilder: (context, index) {
-                              final question = questions[index];
-                              return _buildQuestionCard(
-                                key: ValueKey(question.id),
-                                question: question,
-                                index: index,
-                                theme: theme,
-                              );
-                            },
-                            onReorder: (oldIndex, newIndex) {
-                              if (oldIndex < newIndex) {
-                                newIndex -= 1;
-                              }
-                              if (oldIndex == newIndex) return;
+                      : ReorderableListView.builder(
+                          padding: const EdgeInsets.all(16.0),
+                          itemCount: questions.length,
+                          itemBuilder: (context, index) {
+                            final question = questions[index];
+                            return _buildQuestionCard(
+                              key: ValueKey(question.id),
+                              question: question,
+                              index: index,
+                              theme: theme,
+                            );
+                          },
+                          onReorder: (oldIndex, newIndex) {
+                            if (oldIndex < newIndex) {
+                              newIndex -= 1;
+                            }
+                            if (oldIndex == newIndex) return;
 
-                              final reordered = List<QuestionModel>.from(questions);
-                              final item = reordered.removeAt(oldIndex);
-                              reordered.insert(newIndex, item);
+                            final reordered = List<QuestionModel>.from(questions);
+                            final item = reordered.removeAt(oldIndex);
+                            reordered.insert(newIndex, item);
 
-                              context.read<AddQuestionCubit>().reorderQuestions(widget.examId, reordered);
-                            },
-                          ),
+                            context.read<AddQuestionCubit>().reorderQuestions(widget.examId, reordered);
+                          },
                         ),
                 ),
               ],
