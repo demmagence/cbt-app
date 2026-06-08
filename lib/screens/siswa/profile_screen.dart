@@ -53,13 +53,6 @@ class _SiswaProfileScreenState extends State<SiswaProfileScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Profil Saya'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout_rounded),
-              tooltip: 'Keluar',
-              onPressed: () => _showLogoutConfirmation(context),
-            ),
-          ],
         ),
         body: BlocConsumer<SiswaProfileCubit, SiswaProfileState>(
           listener: (context, state) {
