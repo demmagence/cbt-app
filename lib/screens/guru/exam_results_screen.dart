@@ -86,6 +86,16 @@ class _ExamResultsViewState extends State<ExamResultsView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Hasil Ujian'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/guru/dashboard');
+            }
+          },
+        ),
         actions: [
           BlocBuilder<ExamResultsCubit, ExamResultsState>(
             builder: (context, state) {

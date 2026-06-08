@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import '../../blocs/guru/add_question_cubit.dart';
 import '../../blocs/guru/question_bank_cubit.dart';
@@ -123,6 +124,16 @@ class _AddQuestionViewState extends State<AddQuestionView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kelola Soal Ujian'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/guru/dashboard');
+            }
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.library_add),

@@ -107,6 +107,16 @@ class _ExamListViewState extends State<ExamListView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daftar Ujian'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/guru/dashboard');
+            }
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

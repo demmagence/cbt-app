@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_state.dart';
@@ -87,6 +88,16 @@ class _MonitoringViewState extends State<MonitoringView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Live Monitoring Ujian'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/guru/dashboard');
+            }
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -122,6 +133,7 @@ class _MonitoringViewState extends State<MonitoringView> {
                   padding: const EdgeInsets.all(16.0),
                   child: DropdownButtonFormField<String>(
                     initialValue: selectedExamId,
+                    isExpanded: true,
                     decoration: InputDecoration(
                       labelText: 'Pilih Ujian Aktif',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -141,7 +153,10 @@ class _MonitoringViewState extends State<MonitoringView> {
                         context.read<MonitoringCubit>().selectExam(val);
                       }
                     },
-                    hint: const Text('Pilih salah satu ujian aktif untuk dipantau'),
+                    hint: const Text(
+                      'Pilih salah satu ujian aktif untuk dipantau',
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
 

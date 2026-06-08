@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/guru/essay_grading_detail_cubit.dart';
@@ -98,6 +99,16 @@ class _EssayGradingDetailViewState extends State<EssayGradingDetailView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Koreksi Lembar Essay'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/guru/grading');
+            }
+          },
+        ),
       ),
       body: BlocConsumer<EssayGradingDetailCubit, EssayGradingDetailState>(
         listener: (context, state) {
