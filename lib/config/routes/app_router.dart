@@ -153,10 +153,6 @@ class AppRouter {
               builder: (context, state) => const ExamListScreen(),
             ),
             GoRoute(
-              path: '/guru/exams/create',
-              builder: (context, state) => const CreateExamScreen(),
-            ),
-            GoRoute(
               path: '/guru/exams/:id/edit',
               builder: (context, state) {
                 final examId = state.pathParameters['id'] ?? '';
@@ -210,6 +206,12 @@ class AppRouter {
               builder: (context, state) => const MonitoringScreen(),
             ),
           ],
+        ),
+
+        // Fullscreen Create Exam Route
+        GoRoute(
+          path: '/guru/exams/create',
+          builder: (context, state) => const CreateExamScreen(),
         ),
 
         // Siswa Shell Route (Persistent Bottom Navigation Bar)
