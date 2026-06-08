@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -124,9 +123,6 @@ class _CreateExamFormState extends State<CreateExamForm> {
       String guruId = '';
       if (authState is AuthAuthenticated) {
         guruId = authState.user.uid;
-      }
-      if (guruId.isEmpty) {
-        guruId = FirebaseAuth.instance.currentUser?.uid ?? '';
       }
 
       context.read<CreateExamCubit>().createExam(

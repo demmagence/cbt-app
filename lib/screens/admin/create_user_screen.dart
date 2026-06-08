@@ -93,7 +93,13 @@ class _CreateUserViewState extends State<CreateUserView> {
         title: const Text('Tambah Pengguna Baru'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/admin/dashboard'),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/admin/dashboard');
+            }
+          },
         ),
       ),
       body: BlocConsumer<CreateUserCubit, CreateUserState>(
@@ -245,6 +251,10 @@ class _CreateUserViewState extends State<CreateUserView> {
                   value: 'guru',
                   child: Text('Guru'),
                 ),
+                DropdownMenuItem(
+                  value: 'admin',
+                  child: Text('Admin'),
+                ),
               ],
               onChanged: (value) {
                 if (value != null) {
@@ -334,6 +344,10 @@ class _CreateUserViewState extends State<CreateUserView> {
 
           // Action Buttons
           OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+              shape: const StadiumBorder(),
+            ),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: credentialsText));
               ScaffoldMessenger.of(context).showSnackBar(
@@ -347,22 +361,39 @@ class _CreateUserViewState extends State<CreateUserView> {
             label: const Text('Salin Kredensial'),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => context.go('/admin/users'),
-                  child: const Text('Kembali ke Daftar'),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      shape: const StadiumBorder(),
+                    ),
+                    onPressed: () => context.go('/admin/users'),
+                    child: const Text(
+                      'Ke Daftar',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  onPressed: _resetForm,
-                  child: const Text('Buat Akun Lain'),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      shape: const StadiumBorder(),
+                    ),
+                    onPressed: _resetForm,
+                    child: const Text(
+                      'Buat Akun Lain',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

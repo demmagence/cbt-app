@@ -231,10 +231,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                 child: _buildActionCard(
                   theme: theme,
                   title: 'Tambah User',
-                  subtitle: 'Buat guru/siswa baru',
+                  subtitle: 'Buat akun baru',
                   icon: Icons.person_add_alt_1_rounded,
                   color: theme.colorScheme.primary,
-                  onTap: () => context.go('/admin/users/create'),
+                  onTap: () => context.push('/admin/users/create'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -242,7 +242,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                 child: _buildActionCard(
                   theme: theme,
                   title: 'Semua User',
-                  subtitle: 'Kelola & edit data user',
+                  subtitle: 'Kelola data user',
                   icon: Icons.manage_accounts_rounded,
                   color: theme.colorScheme.secondary,
                   onTap: () => context.go('/admin/users'),
@@ -250,6 +250,15 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               ),
             ],
           ),
+        ),
+        const SizedBox(height: 12),
+        _buildActionCard(
+          theme: theme,
+          title: 'Statistik Analitis',
+          subtitle: 'Lihat data analitis & performa ujian',
+          icon: Icons.analytics_rounded,
+          color: theme.colorScheme.tertiary,
+          onTap: () => context.push('/admin/statistics'),
         ),
       ],
     );
@@ -273,14 +282,14 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 16.0),
           child: Row(
             children: [
               CircleAvatar(
                 backgroundColor: color.withValues(alpha: 0.1),
                 child: Icon(icon, color: color),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,6 +301,8 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.onSurface,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       subtitle,
@@ -486,6 +497,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                     ),
                   )
                 : ListView.separated(
+                    padding: EdgeInsets.zero,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: state.recentActivities.length,

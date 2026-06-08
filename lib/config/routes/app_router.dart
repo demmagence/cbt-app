@@ -109,29 +109,35 @@ class AppRouter {
               path: '/admin/dashboard',
               builder: (context, state) => const AdminDashboardScreen(),
             ),
-            GoRoute(
-              path: '/admin/users',
-              builder: (context, state) => const UserManagementScreen(),
-            ),
-            GoRoute(
-              path: '/admin/users/:uid/edit',
-              builder: (context, state) {
-                final uid = state.pathParameters['uid'] ?? '';
-                final extra = state.extra as UserModel?;
-                return EditUserScreen(uid: uid, initialUser: extra);
-              },
-            ),
-            GoRoute(
-              path: '/admin/statistics',
-              builder: (context, state) => const StatisticsScreen(),
-            ),
           ],
+        ),
+
+        // Fullscreen User Management Route
+        GoRoute(
+          path: '/admin/users',
+          builder: (context, state) => const UserManagementScreen(),
         ),
 
         // Fullscreen Create User Route
         GoRoute(
           path: '/admin/users/create',
           builder: (context, state) => const CreateUserScreen(),
+        ),
+
+        // Fullscreen Edit User Route
+        GoRoute(
+          path: '/admin/users/:uid/edit',
+          builder: (context, state) {
+            final uid = state.pathParameters['uid'] ?? '';
+            final extra = state.extra as UserModel?;
+            return EditUserScreen(uid: uid, initialUser: extra);
+          },
+        ),
+
+        // Fullscreen Statistics Route
+        GoRoute(
+          path: '/admin/statistics',
+          builder: (context, state) => const StatisticsScreen(),
         ),
 
         // Guru Shell Route (Persistent Navigation Drawer)
