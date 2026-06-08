@@ -46,3 +46,11 @@ app.*.map.json
 
 # Firebase debug log
 firebase-debug.log
+
+# Android build output and Gradle caches
+.gradle/
+local.properties
+/android/.gradle/
+/android/local.properties
+/android/build/
+/android/app/build/
