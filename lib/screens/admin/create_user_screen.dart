@@ -93,7 +93,7 @@ class _CreateUserViewState extends State<CreateUserView> {
         title: const Text('Tambah Pengguna Baru'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/admin/users'),
+          onPressed: () => context.go('/admin/dashboard'),
         ),
       ),
       body: BlocConsumer<CreateUserCubit, CreateUserState>(
