@@ -223,30 +223,42 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           ),
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionCard(
-                theme: theme,
-                title: 'Tambah User',
-                subtitle: 'Buat guru/siswa baru',
-                icon: Icons.person_add_alt_1_rounded,
-                color: theme.colorScheme.primary,
-                onTap: () => context.go('/admin/users/create'),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _buildActionCard(
+                  theme: theme,
+                  title: 'Tambah User',
+                  subtitle: 'Buat akun baru',
+                  icon: Icons.person_add_alt_1_rounded,
+                  color: theme.colorScheme.primary,
+                  onTap: () => context.push('/admin/users/create'),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildActionCard(
-                theme: theme,
-                title: 'Semua User',
-                subtitle: 'Kelola & edit data user',
-                icon: Icons.manage_accounts_rounded,
-                color: theme.colorScheme.secondary,
-                onTap: () => context.go('/admin/users'),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildActionCard(
+                  theme: theme,
+                  title: 'Semua User',
+                  subtitle: 'Kelola data user',
+                  icon: Icons.manage_accounts_rounded,
+                  color: theme.colorScheme.secondary,
+                  onTap: () => context.go('/admin/users'),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        _buildActionCard(
+          theme: theme,
+          title: 'Statistik Analitis',
+          subtitle: 'Lihat data analitis & performa ujian',
+          icon: Icons.analytics_rounded,
+          color: theme.colorScheme.tertiary,
+          onTap: () => context.push('/admin/statistics'),
         ),
       ],
     );
@@ -260,46 +272,51 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
-          color: theme.colorScheme.surface,
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: color.withValues(alpha: 0.1),
-              child: Icon(icon, color: color),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
+        color: theme.colorScheme.surface,
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 16.0),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: color.withValues(alpha: 0.1),
+                child: Icon(icon, color: color),
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -480,9 +497,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                     ),
                   )
                 : ListView.separated(
+                    padding: EdgeInsets.zero,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: state.recentActivities.length,
+                    itemCount: state.recentActivities.length > 8 ? 8 : state.recentActivities.length,
                     separatorBuilder: (context, index) => Divider(
                       height: 16,
                       color: theme.colorScheme.outline.withValues(alpha: 0.1),

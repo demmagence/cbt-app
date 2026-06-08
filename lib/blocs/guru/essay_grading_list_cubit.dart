@@ -75,15 +75,25 @@ class EssayGradingListCubit extends Cubit<EssayGradingListState> {
         return;
       }
 
-      // 2. Fetch all exam results with status 'pending_essay'
-      final allPendingResults = await _firestoreService.getCollection<ExamResultModel>(
-        path: FirestoreService.examResultsPath,
-        fromJson: (json, id) => ExamResultModel.fromJson(json, id: id),
-        queryBuilder: (query) => query.where('gradingStatus', isEqualTo: 'pending_essay'),
-      );
+      // 2. Fetch all exam results with status 'pending_essay' belonging to this Guru's exams
+      final examIdList = examIds.toList();
+      final List<ExamResultModel> pendingResults = [];
 
-      // 3. Filter results to keep only those belonging to the Guru's exams
-      final pendingResults = allPendingResults.where((r) => examIds.contains(r.examId)).toList();
+      // Firestore 'whereIn' is limited to 30 items. We query in chunks of 30.
+      for (var i = 0; i < examIdList.length; i += 30) {
+        final chunk = examIdList.sublist(
+          i,
+          i + 30 > examIdList.length ? examIdList.length : i + 30,
+        );
+        final resultsChunk = await _firestoreService.getCollection<ExamResultModel>(
+          path: FirestoreService.examResultsPath,
+          fromJson: (json, id) => ExamResultModel.fromJson(json, id: id),
+          queryBuilder: (query) => query
+              .where('gradingStatus', isEqualTo: 'pending_essay')
+              .where('examId', whereIn: chunk),
+        );
+        pendingResults.addAll(resultsChunk);
+      }
 
       // Sort by submittedAt descending
       pendingResults.sort((a, b) => b.submittedAt.compareTo(a.submittedAt));

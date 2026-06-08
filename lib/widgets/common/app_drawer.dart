@@ -25,30 +25,48 @@ class AppDrawer extends StatelessWidget {
           return Column(
             children: [
               // User Info Header
-              UserAccountsDrawerHeader(
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top + 24.0,
+                  left: 20.0,
+                  right: 20.0,
+                  bottom: 24.0,
                 ),
-                currentAccountPicture: CircleAvatar(
-                  backgroundColor: theme.colorScheme.onPrimary,
-                  child: Text(
-                    user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                ),
-                accountName: Text(
-                  user.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                accountEmail: Column(
+                color: theme.colorScheme.primary,
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(user.email),
+                    CircleAvatar(
+                      radius: 36,
+                      backgroundColor: theme.colorScheme.onPrimary,
+                      child: Text(
+                        user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      user.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Colors.white,
+                      ),
+                    ),
                     const SizedBox(height: 4),
+                    Text(
+                      user.email,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
@@ -102,77 +120,11 @@ class AppDrawer extends StatelessWidget {
   }
 
   List<Widget> _buildAdminMenu(BuildContext context) {
-    return [
-      ListTile(
-        leading: const Icon(Icons.dashboard),
-        title: const Text('Dashboard'),
-        onTap: () {
-          Navigator.pop(context);
-          context.go('/admin/dashboard');
-        },
-      ),
-      ListTile(
-        leading: const Icon(Icons.people),
-        title: const Text('Kelola Pengguna'),
-        onTap: () {
-          Navigator.pop(context);
-          context.go('/admin/users');
-        },
-      ),
-      ListTile(
-        leading: const Icon(Icons.analytics),
-        title: const Text('Statistik'),
-        onTap: () {
-          Navigator.pop(context);
-          context.go('/admin/statistics');
-        },
-      ),
-    ];
+    return const [];
   }
 
   List<Widget> _buildGuruMenu(BuildContext context) {
-    return [
-      ListTile(
-        leading: const Icon(Icons.dashboard),
-        title: const Text('Dashboard'),
-        onTap: () {
-          Navigator.pop(context);
-          context.go('/guru/dashboard');
-        },
-      ),
-      ListTile(
-        leading: const Icon(Icons.assignment),
-        title: const Text('Daftar Ujian'),
-        onTap: () {
-          Navigator.pop(context);
-          context.go('/guru/exams');
-        },
-      ),
-      ListTile(
-        leading: const Icon(Icons.book),
-        title: const Text('Bank Soal'),
-        onTap: () {
-          Navigator.pop(context);
-          context.go('/guru/question-bank');
-        },
-      ),
-      ListTile(
-        leading: const Icon(Icons.grade),
-        title: const Text('Penilaian Essay'),
-        onTap: () {
-          Navigator.pop(context);
-          context.go('/guru/grading');
-        },
-      ),
-      ListTile(
-        leading: const Icon(Icons.live_tv),
-        title: const Text('Monitoring Sesi'),
-        onTap: () {
-          Navigator.pop(context);
-          context.go('/guru/monitoring');
-        },
-      ),
-    ];
+    return const [];
   }
 
   List<Widget> _buildSiswaMenu(BuildContext context) {

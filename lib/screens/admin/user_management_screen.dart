@@ -107,7 +107,9 @@ class _UserManagementViewState extends State<UserManagementView> {
                       const SizedBox(height: 12),
 
                       // Filter Chips
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
                           _buildFilterChip(
                             context: context,
@@ -115,14 +117,18 @@ class _UserManagementViewState extends State<UserManagementView> {
                             roleValue: 'all',
                             currentRole: state.roleFilter,
                           ),
-                          const SizedBox(width: 8),
+                          _buildFilterChip(
+                            context: context,
+                            label: 'Admin',
+                            roleValue: 'admin',
+                            currentRole: state.roleFilter,
+                          ),
                           _buildFilterChip(
                             context: context,
                             label: 'Guru',
                             roleValue: 'guru',
                             currentRole: state.roleFilter,
                           ),
-                          const SizedBox(width: 8),
                           _buildFilterChip(
                             context: context,
                             label: 'Siswa',
@@ -161,12 +167,6 @@ class _UserManagementViewState extends State<UserManagementView> {
 
           return const Center(child: Text('Inisialisasi...'));
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go('/admin/users/create'),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-        child: const Icon(Icons.add_rounded),
       ),
     );
   }
