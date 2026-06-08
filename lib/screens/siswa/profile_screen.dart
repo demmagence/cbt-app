@@ -205,44 +205,48 @@ class _SiswaProfileScreenState extends State<SiswaProfileScreen> {
   }
 
   Widget _buildStatsGrid(SiswaProfileState state, ThemeData theme) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            '${state.totalExams}',
-            'Total Ujian',
-            Icons.assignment_turned_in_rounded,
-            theme.colorScheme.primary,
-            theme,
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _buildStatCard(
+              '${state.totalExams}',
+              'Total Ujian',
+              Icons.assignment_turned_in_rounded,
+              theme.colorScheme.primary,
+              theme,
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            state.totalExams == 0 ? '-' : state.avgScore.toStringAsFixed(1),
-            'Rata-Rata',
-            Icons.analytics_rounded,
-            Colors.blue,
-            theme,
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildStatCard(
+              state.totalExams == 0 ? '-' : state.avgScore.toStringAsFixed(1),
+              'Rata-Rata',
+              Icons.analytics_rounded,
+              Colors.blue,
+              theme,
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            state.totalExams == 0 ? '-' : '${state.highestScore}',
-            'Skor Tertinggi',
-            Icons.workspace_premium_rounded,
-            Colors.amber[800]!,
-            theme,
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildStatCard(
+              state.totalExams == 0 ? '-' : '${state.highestScore}',
+              'Skor Tertinggi',
+              Icons.workspace_premium_rounded,
+              Colors.amber[800]!,
+              theme,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildStatCard(String value, String label, IconData icon, Color color, ThemeData theme) {
     return Card(
       elevation: 0,
+      margin: EdgeInsets.zero, // Remove default card margin to let it align perfectly
       color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -251,6 +255,7 @@ class _SiswaProfileScreenState extends State<SiswaProfileScreen> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               padding: const EdgeInsets.all(8),

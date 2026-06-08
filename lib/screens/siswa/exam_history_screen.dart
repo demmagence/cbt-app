@@ -153,33 +153,35 @@ class _ExamHistoryScreenState extends State<ExamHistoryScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatBox('$totalExams', 'Ujian Selesai', Icons.check_circle_outline, theme.colorScheme.primary, theme),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatBox(
-                  gradedResults.isEmpty ? '-' : avgScore.toStringAsFixed(1),
-                  'Rata-Rata Nilai',
-                  Icons.bar_chart_rounded,
-                  Colors.blue,
-                  theme,
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _buildStatBox('$totalExams', 'Ujian Selesai', Icons.check_circle_outline, theme.colorScheme.primary, theme),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatBox(
-                  highestResult == null ? '-' : '${highestResult.totalScore}',
-                  'Nilai Tertinggi',
-                  Icons.emoji_events_outlined,
-                  Colors.amber[700]!,
-                  theme,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatBox(
+                    gradedResults.isEmpty ? '-' : avgScore.toStringAsFixed(1),
+                    'Rata-Rata Nilai',
+                    Icons.bar_chart_rounded,
+                    Colors.blue,
+                    theme,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatBox(
+                    highestResult == null ? '-' : '${highestResult.totalScore}',
+                    'Nilai Tertinggi',
+                    Icons.emoji_events_outlined,
+                    Colors.amber[700]!,
+                    theme,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -194,6 +196,7 @@ class _ExamHistoryScreenState extends State<ExamHistoryScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, color: color, size: 20),
           const SizedBox(height: 6),
