@@ -153,6 +153,7 @@ class _ExamHistoryScreenState extends State<ExamHistoryScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 16),
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
