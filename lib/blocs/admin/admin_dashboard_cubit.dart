@@ -178,7 +178,7 @@ class AdminDashboardCubit extends Cubit<AdminDashboardState> {
 
       // Sort activities descending by timestamp
       activityList.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      final recentActivities = activityList.take(15).toList();
+      final recentActivities = activityList.take(8).toList();
 
       // 4. Compute exams per month for the last 6 months
       final now = DateTime.now();
