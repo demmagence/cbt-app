@@ -59,17 +59,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     );
-                  } else if (state is AuthAuthenticated) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Selamat datang, ${state.user.name}!'),
-                        backgroundColor: Colors.green,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    );
                   }
                 },
                 builder: (context, state) {
