@@ -1,160 +1,144 @@
-# CBT App — Computer Based Test Application with Anti-Cheat
+# CBT App - Computer Based Test Application
 
-Aplikasi Computer Based Test (CBT) berbasis Flutter dan Firebase yang modern, aman, dan dirancang khusus untuk menyelenggarakan ujian sekolah/institusi dengan integritas tinggi. Dilengkapi dengan deteksi kecurangan tingkat lanjut, pengerjaan offline-resilient, serta dashboard manajemen untuk Admin, Guru, dan Siswa.
+CBT App is a Flutter-based mobile application integrated with Firebase, designed for conducting highly secure examinations. The application incorporates native anti-cheat mechanisms, offline resiliency, and distinct portals for Administrators, Teachers, and Students.
 
----
+## Key Features
 
-## 🚀 Fitur Utama
+### 1. Security and Anti-Cheat System
+* **Fullscreen Immersive Sticky Mode**: Restricts user navigation by locking the application interface in full-screen mode to prevent access to system settings, notifications, or other device resources.
+* **Screenshot and Screen Recording Prevention**: Utilizes native platform channels (`FLAG_SECURE` on Android) to block screen captures and render video recordings black.
+* **App Switch Detection**: Monitors and logs instances of the application losing focus (e.g., system alerts, phone calls, or switching applications). Each event, including its timestamp and duration in seconds, is recorded to the database for evaluation.
+* **Offline Resiliency**: Detects network connectivity changes in real-time, displays status banners, and ensures exam data is cached locally and synchronized with the remote database once connectivity is restored.
 
-### 1. 🛡️ Sistem Anti-Cheat (Integritas Ujian)
-*   **Fullscreen Immersive Sticky Mode**: Mengunci antarmuka aplikasi dalam mode layar penuh. Mencegah siswa membuka panel notifikasi atau bar navigasi sistem secara tidak sengaja.
-*   **Pencegahan Tangkapan Layar & Rekaman**: Mengintegrasikan flag keamanan native (`FLAG_SECURE`) untuk memblokir tangkapan layar (screenshot) dan membuat rekaman layar menjadi hitam.
-*   **Deteksi Perpindahan Aplikasi (App Switch Detection)**: Mencatat frekuensi dan durasi (dalam detik) setiap kali siswa meninggalkan layar ujian (misalnya menerima panggilan, membuka aplikasi lain). Pelanggaran dicatat langsung di database untuk evaluasi guru.
-*   **Offline Connection Banner**: Menampilkan status koneksi internet siswa secara real-time dan menjamin jawaban tersimpan dengan aman di database lokal saat offline.
+### 2. Role-Based Access Control
+* **Administrator Portal**:
+  * System-wide statistics and analytical dashboard.
+  * User account management (Create, Read, Update, Delete operations; activation and deactivation of Teacher and Student accounts).
+* **Teacher Portal**:
+  * Question bank management and exam creation tools.
+  * Automated randomization of questions and multiple-choice options per student.
+  * Real-time monitoring dashboard to track student exam progress and log focus-lost violations.
+  * Manual evaluation interface for essay questions, including written feedback.
+  * Data export capabilities for exam results in CSV format.
+* **Student Portal**:
+  * Exam registration via unique 6-character schedules/tokens.
+  * Interactive exam interface with auto-save capabilities.
+  * History log of completed exams and scores post-evaluation.
 
-### 2. 👥 Manajemen Akses & Pengguna (Multi-Role)
-*   **Administrator**:
-    *   Dashboard analitik data statistik sistem.
-    *   Manajemen akun Guru & Siswa (CRUD, aktivasi/deaktivasi akun).
-*   **Guru (Pendidik)**:
-    *   Manajemen bank soal global dan pembuatan kuis/ujian.
-    *   Pengacakan otomatis butir soal & opsi pilihan ganda per siswa.
-    *   **Monitoring Real-time**: Memantau pengerjaan siswa yang sedang berlangsung secara langsung (melihat status pengerjaan & jumlah pelanggaran keluar aplikasi).
-    *   Penilaian manual soal essay beserta umpan balik tertulis.
-    *   Ekspor nilai ujian ke format CSV dan native sharing.
-*   **Siswa (Peserta Ujian)**:
-    *   Bergabung ke ujian menggunakan token kode unik 6-karakter yang dijadwalkan secara presisi.
-    *   Lembar pengerjaan interaktif yang menyimpan jawaban secara otomatis (auto-save).
-    *   Riwayat pengerjaan ujian dan evaluasi nilai (setelah diperiksa Guru).
+## Technical Stack
 
----
+* **Framework**: Flutter (Android and iOS)
+* **Language**: Dart
+* **State Management**: BLoC and Cubit (via `package:flutter_bloc`)
+* **Backend Services**:
+  * **Authentication**: Firebase Authentication (Session management)
+  * **Database**: Cloud Firestore (utilizing the non-default database instance `cbt-db`)
+* **Key Dependencies**:
+  * `equatable`: State comparison
+  * `share_plus` & `csv`: Grade report exports
+  * `intl`: Date and time localization
+  * `mocktail` & `integration_test`: Automated testing frameworks
 
-## 🛠️ Stack Teknologi
-
-*   **Framework**: [Flutter](https://flutter.dev) (iOS & Android)
-*   **Bahasa Pemrograman**: [Dart](https://dart.dev)
-*   **State Management**: [Flutter BLoC & Cubit](https://pub.dev/packages/flutter_bloc)
-*   **Database & Backend**:
-    *   [Firebase Authentication](https://firebase.google.com/docs/auth) (Manajemen Sesi Akun)
-    *   [Cloud Firestore](https://firebase.google.com/docs/firestore) (Penyimpanan Data Real-time dengan Multi-Database `cbt-db`)
-*   **Dependensi Kunci**:
-    *   `equatable` (Perbandingan nilai objek state)
-    *   `share_plus` & `csv` (Ekspor rekapitulasi nilai)
-    *   `intl` (Format tanggal & waktu lokalisasi)
-    *   `mocktail` & `integration_test` (Kerangka pengujian otomatis)
-
----
-
-## 📁 Struktur Direktori Proyek
+## Directory Structure
 
 ```text
 cbt_app/
 ├── .github/
-│   └── PULL_REQUEST_TEMPLATE.md  # Template kontribusi PR developer
-├── docs/                         # Dokumentasi teknis mendalam
-│   ├── api-services.md           # Detail lapisan Service & API
-│   ├── architecture.md           # Struktur BLoC/Cubit & Alur Data
-│   ├── bug-fixing-report.md      # Laporan pemindaian bug E2E
-│   ├── code-review.md            # Panduan peninjauan kode tim
-│   ├── firestore-rules-audit.md  # Laporan audit aturan keamanan
-│   └── integration-testing.md    # Panduan pengujian integrasi manual
-├── integration_test/             # Skrip automated E2E integration test
+│   └── PULL_REQUEST_TEMPLATE.md  # Pull request template for code contributions
+├── docs/                         # Technical documentation
+│   ├── api-services.md           # API and service layer documentation
+│   ├── architecture.md           # Data flow and BLoC architecture details
+│   ├── bug-fixing-report.md      # End-to-end bug fixing log
+│   ├── code-review.md            # Code review guidelines
+│   ├── firestore-rules-audit.md  # Firestore security rules audit report
+│   └── integration-testing.md    # Guide for integration testing
+├── integration_test/             # End-to-end integration tests
 │   └── app_test.dart
 ├── lib/
-│   ├── blocs/                    # Logika Bisnis & Pengatur Status (BLoC/Cubit)
+│   ├── blocs/                    # BLoC/Cubit business logic layers
 │   │   ├── admin/
 │   │   ├── auth/
 │   │   ├── guru/
 │   │   └── siswa/
-│   ├── config/                   # Konfigurasi Tema (MD3) & Rute Navigasi
-│   ├── models/                   # Definisi Model Data & Serialisasi JSON
-│   ├── screens/                  # Antarmuka Pengguna (UI Screens)
-│   ├── services/                 # Abstraksi Layanan & API SDK
-│   ├── widgets/                  # Komponen UI Reusable
-│   ├── app.dart                  # Titik masuk utama MaterialApp & DI
-│   └── main.dart                 # Inisialisasi awal Flutter & Firebase
-├── test/                         # Unit & Widget Testing
+│   ├── config/                   # Navigation routing and theme configurations (Material 3)
+│   ├── models/                   # JSON serialization and data models
+│   ├── screens/                  # UI screens grouped by roles
+│   ├── services/                 # Firebase and native service layer abstractions
+│   ├── widgets/                  # Reusable UI widgets
+│   ├── app.dart                  # Core MaterialApp and dependency injection setup
+│   └── main.dart                 # Application entry point and Firebase initialization
+├── test/                         # Unit and widget tests
 │   └── app_widget_test.dart
-├── firestore.rules               # Aturan keamanan Cloud Firestore
-└── pubspec.yaml                  # Konfigurasi proyek & dependensi Dart
+├── firestore.rules               # Cloud Firestore security rules
+└── pubspec.yaml                  # Project dependencies and asset definitions
 ```
 
----
+## Getting Started
 
-## ⚙️ Cara Memulai (Getting Started)
+### Prerequisites
+* Flutter SDK (version `>=3.11.0`)
+* Firebase CLI
 
-### Prasyarat
-1. Pastikan Anda telah menginstal [Flutter SDK](https://docs.flutter.dev/get-started/install) (versi `>=3.0.0`).
-2. Instal [Firebase CLI](https://firebase.google.com/docs/cli) dan masuk ke akun Firebase Anda.
+### Installation and Setup
 
-### Langkah Instalasi
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/demmagence/cbt-app.git
+   cd cbt-app
+   ```
 
-1.  **Kloning Repositori**:
-    ```bash
-    git clone https://github.com/demmagence/cbt-app.git
-    cd cbt-app
-    ```
+2. **Retrieve Dependencies**:
+   ```bash
+   flutter pub get
+   ```
 
-2.  **Ambil Dependensi Proyek**:
-    ```bash
-    flutter pub get
-    ```
+3. **Configure Firebase**:
+   * Initialize the Firebase project in your local workspace:
+     ```bash
+     flutterfire configure
+     ```
+   * Enable **Email/Password Authentication** and **Cloud Firestore** in the Firebase Console.
+   * *Note*: The application relies on a non-default database instance named `cbt-db`. Ensure you provision this specific database ID in your Firestore console before running the app.
 
-3.  **Setup Firebase**:
-    *   Hubungkan proyek dengan Firebase Console Anda menggunakan FlutterFire CLI:
-        ```bash
-        flutterfire configure
-        ```
-    *   Pastikan Anda mengaktifkan **Firebase Authentication** (metode Email/Sandi) dan **Cloud Firestore**.
-    *   *Catatan*: Aplikasi dikonfigurasi menggunakan database ID non-default yaitu `cbt-db` pada Firestore. Pastikan Anda membuat database dengan ID `cbt-db` di konsol Firebase Anda sebelum menjalankan aplikasi.
+4. **Deploy Security Rules**:
+   Deploy the `firestore.rules` file to your Firebase console:
+   ```bash
+   firebase deploy --only firestore:rules
+   ```
 
-4.  **Terapkan Aturan Keamanan Firestore**:
-    Terapkan berkas `firestore.rules` ke Firebase Console Anda:
-    ```bash
-    firebase deploy --only firestore:rules
-    ```
+5. **Run the Application**:
+   Connect an Android or iOS device (or start an emulator) and execute:
+   ```bash
+   flutter run
+   ```
 
-5.  **Jalankan Aplikasi**:
-    Hubungkan perangkat fisik Android/iOS atau emulator, kemudian jalankan:
-    ```bash
-    flutter run
-    ```
+## Quality Assurance and Testing
 
----
+To maintain code quality and stability, ensure all changes pass the following validation steps:
 
-## 🧪 Pengujian & Kualitas Kode
+### Static Analysis
+Run the linter to verify formatting and detect code issues:
+```bash
+flutter analyze
+```
 
-Aplikasi ini menerapkan standar kualitas kode yang ketat untuk memastikan stabilitas sistem.
+### Unit and Widget Testing
+Execute the suite of unit and widget tests:
+```bash
+flutter test
+```
 
-*   **Analisis Statis (Linter)**:
-    Pastikan kode Anda bebas dari warning/error analisis sebelum mengajukan PR:
-    ```bash
-    flutter analyze
-    ```
+### Integration Testing
+Execute automated end-to-end integration tests on a connected device:
+```bash
+flutter test integration_test/app_test.dart
+```
 
-*   **Unit & Widget Testing**:
-    Jalankan seluruh pengujian widget dan unit menggunakan perintah:
-    ```bash
-    flutter test
-    ```
+## Contribution Guidelines
 
-*   **Integration Testing (E2E)**:
-    Jalankan pengujian skenario ujung-ke-ujung (End-to-End) otomatis:
-    ```bash
-    flutter test integration_test/app_test.dart
-    ```
+* All new features or bug fixes must be developed on separate branches (e.g., `feature/feature-name` or `bugfix/issue-name`).
+* Submit a Pull Request (PR) utilizing the provided template.
+* Refer to [docs/code-review.md](file:///c:/Users/wibis/Documents/Code/Project/cbt_app/docs/code-review.md) for detailed code review criteria.
 
----
-
-## 🤝 Kontribusi & Code Review
-
-Kami menggunakan proses peninjauan kode yang terstandarisasi sebelum melakukan penggabungan ke branch `main`.
-*   Semua fitur baru atau perbaikan bug wajib dibuat di branch terpisah (contoh: `feat/fitur-baru` atau `fix/bug-tertentu`).
-*   Saat mengajukan Pull Request (PR), silakan isi template checklist peninjauan yang tersedia.
-*   Baca selengkapnya di [docs/code-review.md](file:///c:/Users/wibis/Documents/Code/Project/cbt_app/docs/code-review.md) untuk memahami kriteria kelulusan PR.
-
----
-
-## 📄 Lisensi
-
-Proyek ini dilindungi di bawah lisensi internal tim pengembang. Hak Cipta © 2026.
+## License
+Internal project license. Copyright © 2026. All rights reserved.
