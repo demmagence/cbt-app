@@ -1,4 +1,4 @@
-package com.example.cbt_app
+package com.demma.cbtapp
 
 import android.os.Bundle
 import android.view.WindowManager
