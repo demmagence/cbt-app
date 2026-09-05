@@ -1,144 +1,137 @@
-# CBT App - Computer Based Test Application
+# CBT App
 
-CBT App is a Flutter-based mobile application integrated with Firebase, designed for conducting highly secure examinations. The application incorporates native anti-cheat mechanisms, offline resiliency, and distinct portals for Administrators, Teachers, and Students.
+Aplikasi Computer-Based Test berbasis Flutter untuk perangkat Android. Aplikasi menyediakan akses terpisah bagi admin, guru, dan siswa dengan Firebase sebagai layanan autentikasi, database, dan backend.
 
-## Key Features
+## Fitur
 
-### 1. Security and Anti-Cheat System
-* **Fullscreen Immersive Sticky Mode**: Restricts user navigation by locking the application interface in full-screen mode to prevent access to system settings, notifications, or other device resources.
-* **Screenshot and Screen Recording Prevention**: Utilizes native platform channels (`FLAG_SECURE` on Android) to block screen captures and render video recordings black.
-* **App Switch Detection**: Monitors and logs instances of the application losing focus (e.g., system alerts, phone calls, or switching applications). Each event, including its timestamp and duration in seconds, is recorded to the database for evaluation.
-* **Offline Resiliency**: Detects network connectivity changes in real-time, displays status banners, and ensures exam data is cached locally and synchronized with the remote database once connectivity is restored.
+### Admin
 
-### 2. Role-Based Access Control
-* **Administrator Portal**:
-  * System-wide statistics and analytical dashboard.
-  * User account management (Create, Read, Update, Delete operations; activation and deactivation of Teacher and Student accounts).
-* **Teacher Portal**:
-  * Question bank management and exam creation tools.
-  * Automated randomization of questions and multiple-choice options per student.
-  * Real-time monitoring dashboard to track student exam progress and log focus-lost violations.
-  * Manual evaluation interface for essay questions, including written feedback.
-  * Data export capabilities for exam results in CSV format.
-* **Student Portal**:
-  * Exam registration via unique 6-character schedules/tokens.
-  * Interactive exam interface with auto-save capabilities.
-  * History log of completed exams and scores post-evaluation.
+- Membuat dan mengelola akun guru serta siswa.
+- Menonaktifkan akses pengguna tanpa menghapus riwayat ujian.
+- Melihat statistik pengguna dan ujian.
 
-## Technical Stack
+### Guru
 
-* **Framework**: Flutter (Android and iOS)
-* **Language**: Dart
-* **State Management**: BLoC and Cubit (via `package:flutter_bloc`)
-* **Backend Services**:
-  * **Authentication**: Firebase Authentication (Session management)
-  * **Database**: Cloud Firestore (utilizing the non-default database instance `cbt-db`)
-* **Key Dependencies**:
-  * `equatable`: State comparison
-  * `share_plus` & `csv`: Grade report exports
-  * `intl`: Date and time localization
-  * `mocktail` & `integration_test`: Automated testing frameworks
+- Membuat dan mengatur jadwal ujian.
+- Mengelola soal pilihan ganda dan esai.
+- Menggunakan bank soal.
+- Memantau sesi ujian secara langsung.
+- Mengumpulkan paksa sesi siswa.
+- Menilai jawaban esai dan mengekspor hasil ke CSV.
 
-## Directory Structure
+### Siswa
+
+- Mengikuti ujian menggunakan kode enam karakter.
+- Menyimpan dan memulihkan draf jawaban.
+- Melanjutkan sinkronisasi setelah koneksi kembali tersedia.
+- Melihat hasil ujian.
+
+Penilaian, batas waktu, pengacakan soal, dan validasi akses dijalankan oleh backend. Kunci jawaban tidak dikirim ke aplikasi siswa.
+
+## Teknologi
+
+- Flutter 3.44.0 dan Dart 3.12.0
+- Firebase Authentication
+- Cloud Firestore Enterprise
+- Cloud Functions for Firebase, Node.js 22
+- BLoC/Cubit dan GoRouter
+
+## Persyaratan
+
+- Flutter SDK dengan Dart 3.11 atau lebih baru
+- Android SDK
+- JDK 21
+- Node.js 22
+- Firebase CLI
+- FlutterFire CLI
+
+## Instalasi
+
+```powershell
+git clone https://github.com/demmagence/cbt-app.git
+cd cbt-app
+flutter pub get
+npm --prefix functions ci
+```
+
+Konfigurasikan Firebase untuk platform Android:
+
+```powershell
+flutterfire configure
+```
+
+Gunakan konfigurasi berikut:
+
+- Firebase project: `cbt-app-wibisana`
+- Android application ID: `com.demmagence.cbtapp`
+- Firestore database: `cbt-db`
+- Cloud Functions region: `asia-southeast2`
+
+File `lib/firebase_options.dart` dan `android/app/google-services.json` tidak disimpan dalam Git.
+
+## Menjalankan Aplikasi
+
+```powershell
+flutter run
+```
+
+Untuk menjalankan dengan Firebase Emulator Suite:
+
+```powershell
+npx -y firebase-tools@latest emulators:start --project demo-cbt --only auth,firestore,functions
+```
+
+Jalankan seed dan aplikasi dari terminal lain:
+
+```powershell
+$env:FIRESTORE_EMULATOR_HOST='127.0.0.1:8080'
+$env:FIREBASE_AUTH_EMULATOR_HOST='127.0.0.1:9099'
+node functions/scripts/seed-emulator.js
+flutter run --dart-define=USE_FIREBASE_EMULATORS=true
+```
+
+## Pengujian
+
+```powershell
+flutter analyze --no-pub
+flutter test
+npm --prefix functions test
+npx -y firebase-tools@latest emulators:exec --project demo-cbt --only firestore,auth "npm --prefix functions run test:emulator"
+```
+
+Pengujian mencakup autentikasi, navigasi, pemulihan jawaban, retry submit, aturan akses Firestore, migrasi data, penilaian server, dan simulasi 50 siswa serentak.
+
+## Build Android
+
+Build debug:
+
+```powershell
+flutter build apk --debug
+```
+
+Build release memerlukan `android/key.properties` dan keystore yang valid:
+
+```powershell
+flutter build apk --release
+```
+
+APK dihasilkan di `build/app/outputs/flutter-apk/`.
+
+## Struktur Proyek
 
 ```text
-cbt_app/
-├── .github/
-│   └── PULL_REQUEST_TEMPLATE.md  # Pull request template for code contributions
-├── docs/                         # Technical documentation
-│   ├── api-services.md           # API and service layer documentation
-│   ├── architecture.md           # Data flow and BLoC architecture details
-│   ├── bug-fixing-report.md      # End-to-end bug fixing log
-│   ├── code-review.md            # Code review guidelines
-│   ├── firestore-rules-audit.md  # Firestore security rules audit report
-│   └── integration-testing.md    # Guide for integration testing
-├── integration_test/             # End-to-end integration tests
-│   └── app_test.dart
-├── lib/
-│   ├── blocs/                    # BLoC/Cubit business logic layers
-│   │   ├── admin/
-│   │   ├── auth/
-│   │   ├── guru/
-│   │   └── siswa/
-│   ├── config/                   # Navigation routing and theme configurations (Material 3)
-│   ├── models/                   # JSON serialization and data models
-│   ├── screens/                  # UI screens grouped by roles
-│   ├── services/                 # Firebase and native service layer abstractions
-│   ├── widgets/                  # Reusable UI widgets
-│   ├── app.dart                  # Core MaterialApp and dependency injection setup
-│   └── main.dart                 # Application entry point and Firebase initialization
-├── test/                         # Unit and widget tests
-│   └── app_widget_test.dart
-├── firestore.rules               # Cloud Firestore security rules
-└── pubspec.yaml                  # Project dependencies and asset definitions
+android/             Konfigurasi aplikasi Android
+assets/              Aset aplikasi
+functions/           Backend, migrasi, dan pengujian emulator
+lib/                 Kode aplikasi Flutter
+test/                Pengujian inti Flutter
+firebase.json        Konfigurasi Firebase
+firestore.rules      Aturan akses Firestore
+firestore.indexes.json
 ```
 
-## Getting Started
+## Status Produksi
 
-### Prerequisites
-* Flutter SDK (version `>=3.11.0`)
-* Firebase CLI
+Aplikasi telah menghasilkan APK release bertanda tangan dan lulus pengujian lokal. Aplikasi belum boleh digunakan untuk ujian produksi karena Cloud Functions dan Cloud Scheduler belum diterapkan pada proyek Firebase.
 
-### Installation and Setup
-
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/demmagence/cbt-app.git
-   cd cbt-app
-   ```
-
-2. **Retrieve Dependencies**:
-   ```bash
-   flutter pub get
-   ```
-
-3. **Configure Firebase**:
-   * Initialize the Firebase project in your local workspace:
-     ```bash
-     flutterfire configure
-     ```
-   * Enable **Email/Password Authentication** and **Cloud Firestore** in the Firebase Console.
-   * *Note*: The application relies on a non-default database instance named `cbt-db`. Ensure you provision this specific database ID in your Firestore console before running the app.
-
-4. **Deploy Security Rules**:
-   Deploy the `firestore.rules` file to your Firebase console:
-   ```bash
-   firebase deploy --only firestore:rules
-   ```
-
-5. **Run the Application**:
-   Connect an Android or iOS device (or start an emulator) and execute:
-   ```bash
-   flutter run
-   ```
-
-## Quality Assurance and Testing
-
-To maintain code quality and stability, ensure all changes pass the following validation steps:
-
-### Static Analysis
-Run the linter to verify formatting and detect code issues:
-```bash
-flutter analyze
-```
-
-### Unit and Widget Testing
-Execute the suite of unit and widget tests:
-```bash
-flutter test
-```
-
-### Integration Testing
-Execute automated end-to-end integration tests on a connected device:
-```bash
-flutter test integration_test/app_test.dart
-```
-
-## Contribution Guidelines
-
-* All new features or bug fixes must be developed on separate branches (e.g., `feature/feature-name` or `bugfix/issue-name`).
-* Submit a Pull Request (PR) utilizing the provided template.
-* Refer to [docs/code-review.md](file:///c:/Users/wibis/Documents/Code/Project/cbt_app/docs/code-review.md) for detailed code review criteria.
-
-## License
-Internal project license. Copyright © 2026. All rights reserved.
+Deployment backend memerlukan paket Firebase Blaze dengan akun billing. Migrasi data produksi hanya boleh dijalankan setelah backup Firestore, seluruh ujian aktif selesai, dan hasil pratinjau migrasi diperiksa.
