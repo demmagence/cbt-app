@@ -36,8 +36,8 @@ class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     notifyListeners();
     _subscription = stream.asBroadcastStream().listen(
-          (dynamic _) => notifyListeners(),
-        );
+      (dynamic _) => notifyListeners(),
+    );
   }
 
   @override
@@ -50,10 +50,10 @@ class GoRouterRefreshStream extends ChangeNotifier {
 class AppRouter {
   AppRouter._();
 
-  static GoRouter createRouter(AuthBloc authBloc) {
+  static GoRouter createRouter(AuthBloc authBloc, {Listenable? refresh}) {
     return GoRouter(
       initialLocation: '/login',
-      refreshListenable: GoRouterRefreshStream(authBloc.stream),
+      refreshListenable: refresh ?? GoRouterRefreshStream(authBloc.stream),
       redirect: (context, state) {
         final authState = authBloc.state;
         final isLoggingIn = state.uri.toString() == '/login';
@@ -68,26 +68,36 @@ class AppRouter {
 
         if (authState is AuthAuthenticated) {
           final role = authState.user.role;
-          
+
           if (isLoggingIn) {
-            if (role == 'admin') return '/admin/dashboard';
-            if (role == 'guru') return '/guru/dashboard';
+            if (role == 'admin') {
+              return '/admin/dashboard';
+            }
+            if (role == 'guru') {
+              return '/guru/dashboard';
+            }
             return '/siswa/dashboard';
           }
 
           // Role-based Guards
           if (state.uri.toString().startsWith('/admin') && role != 'admin') {
-            if (role == 'guru') return '/guru/dashboard';
+            if (role == 'guru') {
+              return '/guru/dashboard';
+            }
             return '/siswa/dashboard';
           }
 
           if (state.uri.toString().startsWith('/guru') && role != 'guru') {
-            if (role == 'admin') return '/admin/dashboard';
+            if (role == 'admin') {
+              return '/admin/dashboard';
+            }
             return '/siswa/dashboard';
           }
 
           if (state.uri.toString().startsWith('/siswa') && role != 'siswa') {
-            if (role == 'admin') return '/admin/dashboard';
+            if (role == 'admin') {
+              return '/admin/dashboard';
+            }
             return '/guru/dashboard';
           }
         }
@@ -115,13 +125,19 @@ class AppRouter {
         // Fullscreen User Management Route
         GoRoute(
           path: '/admin/users',
-          builder: (context, state) => const UserManagementScreen(),
+          builder: (context, state) => const DetailBackScope(
+            fallbackLocation: '/admin/dashboard',
+            child: UserManagementScreen(),
+          ),
         ),
 
         // Fullscreen Create User Route
         GoRoute(
           path: '/admin/users/create',
-          builder: (context, state) => const CreateUserScreen(),
+          builder: (context, state) => const DetailBackScope(
+            fallbackLocation: '/admin/dashboard',
+            child: CreateUserScreen(),
+          ),
         ),
 
         // Fullscreen Edit User Route
@@ -130,14 +146,20 @@ class AppRouter {
           builder: (context, state) {
             final uid = state.pathParameters['uid'] ?? '';
             final extra = state.extra as UserModel?;
-            return EditUserScreen(uid: uid, initialUser: extra);
+            return DetailBackScope(
+              fallbackLocation: '/admin/users',
+              child: EditUserScreen(uid: uid, initialUser: extra),
+            );
           },
         ),
 
         // Fullscreen Statistics Route
         GoRoute(
           path: '/admin/statistics',
-          builder: (context, state) => const StatisticsScreen(),
+          builder: (context, state) => const DetailBackScope(
+            fallbackLocation: '/admin/dashboard',
+            child: StatisticsScreen(),
+          ),
         ),
 
         // Guru Shell Route (Persistent Navigation Drawer)
@@ -154,7 +176,10 @@ class AppRouter {
         // Fullscreen Create Exam Route
         GoRoute(
           path: '/guru/exams/create',
-          builder: (context, state) => const CreateExamScreen(),
+          builder: (context, state) => const DetailBackScope(
+            fallbackLocation: '/guru/dashboard',
+            child: CreateExamScreen(),
+          ),
         ),
 
         // Fullscreen Manage Exam Questions Route
@@ -162,14 +187,20 @@ class AppRouter {
           path: '/guru/exams/:id/questions',
           builder: (context, state) {
             final examId = state.pathParameters['id'] ?? '';
-            return AddQuestionScreen(examId: examId);
+            return DetailBackScope(
+              fallbackLocation: '/guru/exams',
+              child: AddQuestionScreen(examId: examId),
+            );
           },
         ),
 
         // Fullscreen Exam List Route
         GoRoute(
           path: '/guru/exams',
-          builder: (context, state) => const ExamListScreen(),
+          builder: (context, state) => const DetailBackScope(
+            fallbackLocation: '/guru/dashboard',
+            child: ExamListScreen(),
+          ),
         ),
 
         // Fullscreen Edit Exam Route
@@ -177,14 +208,20 @@ class AppRouter {
           path: '/guru/exams/:id/edit',
           builder: (context, state) {
             final examId = state.pathParameters['id'] ?? '';
-            return EditExamScreen(examId: examId);
+            return DetailBackScope(
+              fallbackLocation: '/guru/exams',
+              child: EditExamScreen(examId: examId),
+            );
           },
         ),
 
         // Fullscreen Question Bank Route
         GoRoute(
           path: '/guru/question-bank',
-          builder: (context, state) => const QuestionBankScreen(),
+          builder: (context, state) => const DetailBackScope(
+            fallbackLocation: '/guru/dashboard',
+            child: QuestionBankScreen(),
+          ),
         ),
 
         // Redirect base results path to exams list page
@@ -198,7 +235,10 @@ class AppRouter {
           path: '/guru/results/:examId',
           builder: (context, state) {
             final examId = state.pathParameters['examId'] ?? '';
-            return ExamResultsScreen(examId: examId);
+            return DetailBackScope(
+              fallbackLocation: '/guru/exams',
+              child: ExamResultsScreen(examId: examId),
+            );
           },
         ),
 
@@ -208,14 +248,20 @@ class AppRouter {
           builder: (context, state) {
             final examId = state.pathParameters['examId'] ?? '';
             final userId = state.pathParameters['userId'] ?? '';
-            return StudentResultDetailScreen(examId: examId, userId: userId);
+            return DetailBackScope(
+              fallbackLocation: '/guru/results/$examId',
+              child: StudentResultDetailScreen(examId: examId, userId: userId),
+            );
           },
         ),
 
         // Fullscreen Essay Grading Route
         GoRoute(
           path: '/guru/grading',
-          builder: (context, state) => const EssayGradingScreen(),
+          builder: (context, state) => const DetailBackScope(
+            fallbackLocation: '/guru/dashboard',
+            child: EssayGradingScreen(),
+          ),
         ),
 
         // Fullscreen Essay Grading Detail Route
@@ -224,14 +270,20 @@ class AppRouter {
           builder: (context, state) {
             final examId = state.pathParameters['examId'] ?? '';
             final userId = state.pathParameters['userId'] ?? '';
-            return EssayGradingDetailScreen(examId: examId, userId: userId);
+            return DetailBackScope(
+              fallbackLocation: '/guru/grading',
+              child: EssayGradingDetailScreen(examId: examId, userId: userId),
+            );
           },
         ),
 
         // Fullscreen Live Monitoring Route
         GoRoute(
           path: '/guru/monitoring',
-          builder: (context, state) => const MonitoringScreen(),
+          builder: (context, state) => const DetailBackScope(
+            fallbackLocation: '/guru/dashboard',
+            child: MonitoringScreen(),
+          ),
         ),
 
         // Siswa Shell Route (Persistent Bottom Navigation Bar)
@@ -244,15 +296,24 @@ class AppRouter {
             ),
             GoRoute(
               path: '/siswa/join',
-              builder: (context, state) => const JoinExamScreen(),
+              builder: (context, state) => const DetailBackScope(
+                fallbackLocation: '/siswa/dashboard',
+                child: JoinExamScreen(),
+              ),
             ),
             GoRoute(
               path: '/siswa/history',
-              builder: (context, state) => const ExamHistoryScreen(),
+              builder: (context, state) => const DetailBackScope(
+                fallbackLocation: '/siswa/dashboard',
+                child: ExamHistoryScreen(),
+              ),
             ),
             GoRoute(
               path: '/siswa/profile',
-              builder: (context, state) => const SiswaProfileScreen(),
+              builder: (context, state) => const DetailBackScope(
+                fallbackLocation: '/siswa/dashboard',
+                child: SiswaProfileScreen(),
+              ),
             ),
           ],
         ),
@@ -262,7 +323,10 @@ class AppRouter {
           path: '/siswa/exam/:id',
           builder: (context, state) {
             final examId = state.pathParameters['id'] ?? '';
-            return ExamTakingScreen(examId: examId);
+            return DetailBackScope(
+              fallbackLocation: '/siswa/dashboard',
+              child: ExamTakingScreen(examId: examId),
+            );
           },
         ),
         GoRoute(
@@ -270,16 +334,42 @@ class AppRouter {
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>? ?? {};
             final examTitle = extra['examTitle'] as String? ?? 'Ujian';
-            final pgScore = extra['pgScore'] as double?;
+            final pgScore = (extra['pgScore'] as num?)?.toDouble();
             final gradingStatus = extra['gradingStatus'] as String? ?? 'graded';
-            return ExamSuccessScreen(
-              examTitle: examTitle,
-              pgScore: pgScore?.toDouble(),
-              gradingStatus: gradingStatus,
+            return DetailBackScope(
+              fallbackLocation: '/siswa/dashboard',
+              child: ExamSuccessScreen(
+                examTitle: examTitle,
+                pgScore: pgScore?.toDouble(),
+                gradingStatus: gradingStatus,
+              ),
             );
           },
         ),
       ],
+    );
+  }
+}
+
+class DetailBackScope extends StatelessWidget {
+  final String fallbackLocation;
+  final Widget child;
+
+  const DetailBackScope({
+    super.key,
+    required this.fallbackLocation,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final canPop = Navigator.of(context).canPop();
+    return PopScope<Object?>(
+      canPop: canPop,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) context.go(fallbackLocation);
+      },
+      child: child,
     );
   }
 }
@@ -319,9 +409,15 @@ class SiswaShellScaffold extends StatelessWidget {
 
   int _calculateSelectedIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.toString();
-    if (location.startsWith('/siswa/join')) return 1;
-    if (location.startsWith('/siswa/history')) return 2;
-    if (location.startsWith('/siswa/profile')) return 3;
+    if (location.startsWith('/siswa/join')) {
+      return 1;
+    }
+    if (location.startsWith('/siswa/history')) {
+      return 2;
+    }
+    if (location.startsWith('/siswa/profile')) {
+      return 3;
+    }
     return 0;
   }
 

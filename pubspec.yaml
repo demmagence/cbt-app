@@ -1,13 +1,14 @@
 name: cbt_app
-description: "A new Flutter project."
+description: "Aplikasi CBT Android untuk admin, guru, dan siswa."
 publish_to: 'none'
-version: 0.1.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.11.0
 
 dependencies:
   cloud_firestore: ^6.5.0
+  cloud_functions: ^6.4.0
   connectivity_plus: ^7.1.1
   csv: ^8.0.0
   equatable: ^2.0.8
@@ -21,17 +22,13 @@ dependencies:
   google_fonts: ^8.1.0
   intl: ^0.20.2
   share_plus: ^13.1.0
+  shared_preferences: ^2.5.5
   uuid: ^4.5.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  integration_test:
-    sdk: flutter
   flutter_lints: ^6.0.0
-  bloc_test: 10.0.0
-  mocktail: 1.0.4
-  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true

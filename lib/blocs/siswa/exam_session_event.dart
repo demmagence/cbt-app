@@ -100,3 +100,13 @@ class ConnectivityChanged extends ExamSessionEvent {
   List<Object?> get props => [isOffline];
 }
 
+class SyncAnswersRequested extends ExamSessionEvent {
+  const SyncAnswersRequested();
+}
+
+class RemoteSessionChanged extends ExamSessionEvent {
+  final ExamSessionModel session;
+  const RemoteSessionChanged(this.session);
+  @override
+  List<Object?> get props => [session];
+}

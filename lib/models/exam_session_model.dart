@@ -12,11 +12,7 @@ class AppSwitchLog extends Equatable {
     required this.type,
   });
 
-  AppSwitchLog copyWith({
-    DateTime? timestamp,
-    int? duration,
-    String? type,
-  }) {
+  AppSwitchLog copyWith({DateTime? timestamp, int? duration, String? type}) {
     return AppSwitchLog(
       timestamp: timestamp ?? this.timestamp,
       duration: duration ?? this.duration,
@@ -28,7 +24,8 @@ class AppSwitchLog extends Equatable {
     return AppSwitchLog(
       timestamp: json['timestamp'] is Timestamp
           ? (json['timestamp'] as Timestamp).toDate()
-          : DateTime.tryParse(json['timestamp']?.toString() ?? '') ?? DateTime.now(),
+          : DateTime.tryParse(json['timestamp']?.toString() ?? '') ??
+                DateTime.now(),
       duration: json['duration'] as int? ?? 0,
       type: json['type'] as String? ?? 'app_switch',
     );
@@ -52,10 +49,13 @@ class ExamSessionModel extends Equatable {
   final String userId;
   final DateTime startedAt;
   final DateTime? endedAt;
+  final DateTime? expiresAt;
   final String status; // in_progress | completed | auto_submitted
   final List<String> questionOrder; // shuffled question IDs
-  final Map<String, List<int>> optionOrders; // key: questionId, value: shuffled option indices
-  final Map<String, dynamic> answers; // key: questionId, value: selectedIndex (int) or essayText (String)
+  final Map<String, List<int>>
+  optionOrders; // key: questionId, value: shuffled option indices
+  final Map<String, dynamic>
+  answers; // key: questionId, value: selectedIndex (int) or essayText (String)
   final int appSwitchCount;
   final List<AppSwitchLog> appSwitchLogs;
 
@@ -65,6 +65,7 @@ class ExamSessionModel extends Equatable {
     required this.userId,
     required this.startedAt,
     this.endedAt,
+    this.expiresAt,
     required this.status,
     required this.questionOrder,
     required this.optionOrders,
@@ -92,6 +93,7 @@ class ExamSessionModel extends Equatable {
       userId: userId ?? this.userId,
       startedAt: startedAt ?? this.startedAt,
       endedAt: endedAt ?? this.endedAt,
+      expiresAt: expiresAt,
       status: status ?? this.status,
       questionOrder: questionOrder ?? this.questionOrder,
       optionOrders: optionOrders ?? this.optionOrders,
@@ -120,13 +122,19 @@ class ExamSessionModel extends Equatable {
       id: id ?? json['id'] as String? ?? '',
       examId: json['examId'] as String? ?? '',
       userId: json['userId'] as String? ?? '',
-      startedAt: json['startedAt'] is Timestamp 
-          ? (json['startedAt'] as Timestamp).toDate() 
-          : DateTime.tryParse(json['startedAt']?.toString() ?? '') ?? DateTime.now(),
-      endedAt: json['endedAt'] is Timestamp 
-          ? (json['endedAt'] as Timestamp).toDate() 
-          : json['endedAt'] != null ? DateTime.tryParse(json['endedAt'].toString()) : null,
+      startedAt: json['startedAt'] is Timestamp
+          ? (json['startedAt'] as Timestamp).toDate()
+          : DateTime.tryParse(json['startedAt']?.toString() ?? '') ??
+                DateTime.now(),
+      endedAt: json['endedAt'] is Timestamp
+          ? (json['endedAt'] as Timestamp).toDate()
+          : json['endedAt'] != null
+          ? DateTime.tryParse(json['endedAt'].toString())
+          : null,
       status: json['status'] as String? ?? 'in_progress',
+      expiresAt: json['expiresAt'] is Timestamp
+          ? (json['expiresAt'] as Timestamp).toDate()
+          : DateTime.tryParse(json['expiresAt']?.toString() ?? ''),
       questionOrder: qOrder,
       optionOrders: oOrders,
       answers: ans,
@@ -142,6 +150,7 @@ class ExamSessionModel extends Equatable {
       'userId': userId,
       'startedAt': Timestamp.fromDate(startedAt),
       if (endedAt != null) 'endedAt': Timestamp.fromDate(endedAt!),
+      if (expiresAt != null) 'expiresAt': Timestamp.fromDate(expiresAt!),
       'status': status,
       'questionOrder': questionOrder,
       'optionOrders': optionOrders,
@@ -153,16 +162,17 @@ class ExamSessionModel extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        examId,
-        userId,
-        startedAt,
-        endedAt,
-        status,
-        questionOrder,
-        optionOrders,
-        answers,
-        appSwitchCount,
-        appSwitchLogs,
-      ];
+    id,
+    examId,
+    userId,
+    startedAt,
+    endedAt,
+    expiresAt,
+    status,
+    questionOrder,
+    optionOrders,
+    answers,
+    appSwitchCount,
+    appSwitchLogs,
+  ];
 }

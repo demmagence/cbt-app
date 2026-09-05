@@ -11,6 +11,7 @@ class ExamModel extends Equatable {
   final DateTime startDate;
   final DateTime endDate;
   final bool isActive;
+  final bool locked;
   final bool shuffleQuestions;
   final bool shuffleOptions;
   final int totalQuestions;
@@ -25,6 +26,7 @@ class ExamModel extends Equatable {
     required this.startDate,
     required this.endDate,
     required this.isActive,
+    this.locked = false,
     required this.shuffleQuestions,
     required this.shuffleOptions,
     required this.totalQuestions,
@@ -54,6 +56,7 @@ class ExamModel extends Equatable {
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       isActive: isActive ?? this.isActive,
+      locked: locked,
       shuffleQuestions: shuffleQuestions ?? this.shuffleQuestions,
       shuffleOptions: shuffleOptions ?? this.shuffleOptions,
       totalQuestions: totalQuestions ?? this.totalQuestions,
@@ -68,13 +71,16 @@ class ExamModel extends Equatable {
       code: json['code'] as String? ?? '',
       createdBy: json['createdBy'] as String? ?? '',
       duration: json['duration'] as int? ?? 0,
-      startDate: json['startDate'] is Timestamp 
-          ? (json['startDate'] as Timestamp).toDate() 
-          : DateTime.tryParse(json['startDate']?.toString() ?? '') ?? DateTime.now(),
-      endDate: json['endDate'] is Timestamp 
-          ? (json['endDate'] as Timestamp).toDate() 
-          : DateTime.tryParse(json['endDate']?.toString() ?? '') ?? DateTime.now(),
+      startDate: json['startDate'] is Timestamp
+          ? (json['startDate'] as Timestamp).toDate()
+          : DateTime.tryParse(json['startDate']?.toString() ?? '') ??
+                DateTime.now(),
+      endDate: json['endDate'] is Timestamp
+          ? (json['endDate'] as Timestamp).toDate()
+          : DateTime.tryParse(json['endDate']?.toString() ?? '') ??
+                DateTime.now(),
       isActive: json['isActive'] as bool? ?? true,
+      locked: json['locked'] as bool? ?? false,
       shuffleQuestions: json['shuffleQuestions'] as bool? ?? false,
       shuffleOptions: json['shuffleOptions'] as bool? ?? false,
       totalQuestions: json['totalQuestions'] as int? ?? 0,
@@ -92,6 +98,7 @@ class ExamModel extends Equatable {
       'startDate': Timestamp.fromDate(startDate),
       'endDate': Timestamp.fromDate(endDate),
       'isActive': isActive,
+      'locked': locked,
       'shuffleQuestions': shuffleQuestions,
       'shuffleOptions': shuffleOptions,
       'totalQuestions': totalQuestions,
@@ -100,17 +107,18 @@ class ExamModel extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        title,
-        description,
-        code,
-        createdBy,
-        duration,
-        startDate,
-        endDate,
-        isActive,
-        shuffleQuestions,
-        shuffleOptions,
-        totalQuestions,
-      ];
+    id,
+    title,
+    description,
+    code,
+    createdBy,
+    duration,
+    startDate,
+    endDate,
+    isActive,
+    locked,
+    shuffleQuestions,
+    shuffleOptions,
+    totalQuestions,
+  ];
 }

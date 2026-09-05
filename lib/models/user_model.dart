@@ -8,6 +8,7 @@ class UserModel extends Equatable {
   final String role; // admin | guru | siswa
   final DateTime createdAt;
   final bool isActive;
+  final bool deleted;
 
   const UserModel({
     required this.uid,
@@ -16,6 +17,7 @@ class UserModel extends Equatable {
     required this.role,
     required this.createdAt,
     required this.isActive,
+    this.deleted = false,
   });
 
   UserModel copyWith({
@@ -33,6 +35,7 @@ class UserModel extends Equatable {
       role: role ?? this.role,
       createdAt: createdAt ?? this.createdAt,
       isActive: isActive ?? this.isActive,
+      deleted: deleted,
     );
   }
 
@@ -42,10 +45,12 @@ class UserModel extends Equatable {
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
       role: json['role'] as String? ?? 'siswa',
-      createdAt: json['createdAt'] is Timestamp 
-          ? (json['createdAt'] as Timestamp).toDate() 
-          : DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
+      createdAt: json['createdAt'] is Timestamp
+          ? (json['createdAt'] as Timestamp).toDate()
+          : DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
+                DateTime.now(),
       isActive: json['isActive'] as bool? ?? true,
+      deleted: json['deleted'] as bool? ?? false,
     );
   }
 
@@ -61,5 +66,13 @@ class UserModel extends Equatable {
   }
 
   @override
-  List<Object?> get props => [uid, name, email, role, createdAt, isActive];
+  List<Object?> get props => [
+    uid,
+    name,
+    email,
+    role,
+    createdAt,
+    isActive,
+    deleted,
+  ];
 }

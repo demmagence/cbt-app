@@ -26,7 +26,7 @@ class _JoinExamScreenState extends State<JoinExamScreen> {
     super.initState();
     _joinExamCubit = JoinExamCubit(
       firestoreService: context.read<FirestoreService>(),
-      examCodeService: ExamCodeService(),
+      examCodeService: context.read<ExamCodeService>(),
     );
   }
 
@@ -41,9 +41,7 @@ class _JoinExamScreenState extends State<JoinExamScreen> {
   Widget build(BuildContext context) {
     final authState = context.watch<AuthBloc>().state;
     if (authState is! AuthAuthenticated) {
-      return const Scaffold(
-        body: Center(child: Text('Tidak terautentikasi')),
-      );
+      return const Scaffold(body: Center(child: Text('Tidak terautentikasi')));
     }
 
     final user = authState.user;
@@ -52,9 +50,7 @@ class _JoinExamScreenState extends State<JoinExamScreen> {
     return BlocProvider.value(
       value: _joinExamCubit,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Ikut Ujian'),
-        ),
+        appBar: AppBar(title: const Text('Ikut Ujian')),
         body: BlocConsumer<JoinExamCubit, JoinExamState>(
           listener: (context, state) {
             if (state is JoinExamSuccess) {
@@ -77,7 +73,9 @@ class _JoinExamScreenState extends State<JoinExamScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                        color: theme.colorScheme.primaryContainer.withValues(
+                          alpha: 0.3,
+                        ),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -98,7 +96,7 @@ class _JoinExamScreenState extends State<JoinExamScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Silakan masukkan 6 digit token kode ujian yang diberikan oleh Pengawas atau Guru untuk memulai ujian.',
+                    'Masukkan kode ujian enam karakter yang diberikan oleh guru. Jawaban harus tersinkron sebelum waktu ujian berakhir.',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
@@ -120,15 +118,21 @@ class _JoinExamScreenState extends State<JoinExamScreen> {
                       textCapitalization: TextCapitalization.characters,
                       inputFormatters: [
                         LengthLimitingTextInputFormatter(6),
-                        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'[a-zA-Z0-9]'),
+                        ),
                       ],
                       decoration: InputDecoration(
                         hintText: 'TOKEN',
                         hintStyle: theme.textTheme.headlineMedium?.copyWith(
-                          color: theme.colorScheme.outline.withValues(alpha: 0.5),
+                          color: theme.colorScheme.outline.withValues(
+                            alpha: 0.5,
+                          ),
                           letterSpacing: 8,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -148,13 +152,20 @@ class _JoinExamScreenState extends State<JoinExamScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.errorContainer.withValues(alpha: 0.3),
+                        color: theme.colorScheme.errorContainer.withValues(
+                          alpha: 0.3,
+                        ),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: theme.colorScheme.error.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: theme.colorScheme.error.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline_rounded, color: theme.colorScheme.error),
+                          Icon(
+                            Icons.error_outline_rounded,
+                            color: theme.colorScheme.error,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -178,12 +189,20 @@ class _JoinExamScreenState extends State<JoinExamScreen> {
                       ),
                     )
                   else if (state is JoinExamCodeValid)
-                    _buildExamDetailCard(state.exam, state.existingSession, user.uid, theme)
+                    _buildExamDetailCard(
+                      state.exam,
+                      state.existingSession,
+                      user.uid,
+                      theme,
+                    )
                   else
                     ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
-                          _joinExamCubit.verifyCode(_codeController.text, user.uid);
+                          _joinExamCubit.verifyCode(
+                            _codeController.text,
+                            user.uid,
+                          );
                         }
                       },
                       child: const Text('Cek Kode'),
@@ -208,7 +227,10 @@ class _JoinExamScreenState extends State<JoinExamScreen> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.3), width: 1.5),
+        side: BorderSide(
+          color: theme.colorScheme.primary.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
       ),
       color: theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
       child: Padding(
@@ -219,7 +241,10 @@ class _JoinExamScreenState extends State<JoinExamScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
@@ -235,7 +260,10 @@ class _JoinExamScreenState extends State<JoinExamScreen> {
                 const Spacer(),
                 if (hasActiveSession)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.orange.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(6),
@@ -273,14 +301,26 @@ class _JoinExamScreenState extends State<JoinExamScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildInfoColumn(Icons.timer_outlined, '${exam.duration} Menit', 'Durasi', theme),
-                _buildInfoColumn(Icons.quiz_outlined, '${exam.totalQuestions} Soal', 'Pertanyaan', theme),
+                _buildInfoColumn(
+                  Icons.timer_outlined,
+                  '${exam.duration} Menit',
+                  'Durasi',
+                  theme,
+                ),
+                _buildInfoColumn(
+                  Icons.quiz_outlined,
+                  '${exam.totalQuestions} Soal',
+                  'Pertanyaan',
+                  theme,
+                ),
               ],
             ),
             const SizedBox(height: 24),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: hasActiveSession ? Colors.orange : theme.colorScheme.primary,
+                backgroundColor: hasActiveSession
+                    ? Colors.orange
+                    : theme.colorScheme.primary,
                 foregroundColor: Colors.white,
               ),
               onPressed: () {
@@ -298,7 +338,12 @@ class _JoinExamScreenState extends State<JoinExamScreen> {
     );
   }
 
-  Widget _buildInfoColumn(IconData icon, String value, String label, ThemeData theme) {
+  Widget _buildInfoColumn(
+    IconData icon,
+    String value,
+    String label,
+    ThemeData theme,
+  ) {
     return Column(
       children: [
         Icon(icon, color: theme.colorScheme.primary, size: 24),

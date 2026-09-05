@@ -1,9 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:uuid/uuid.dart';
 import '../../models/exam_model.dart';
 import '../../services/firestore_service.dart';
-import '../../services/exam_code_service.dart';
 
 // States
 abstract class CreateExamState extends Equatable {
@@ -42,14 +40,10 @@ class CreateExamError extends CreateExamState {
 // Cubit
 class CreateExamCubit extends Cubit<CreateExamState> {
   final FirestoreService _firestoreService;
-  final ExamCodeService _examCodeService;
 
-  CreateExamCubit({
-    required FirestoreService firestoreService,
-    required ExamCodeService examCodeService,
-  })  : _firestoreService = firestoreService,
-        _examCodeService = examCodeService,
-        super(const CreateExamInitial());
+  CreateExamCubit({required FirestoreService firestoreService})
+    : _firestoreService = firestoreService,
+      super(const CreateExamInitial());
 
   Future<void> createExam({
     required String title,
@@ -63,34 +57,16 @@ class CreateExamCubit extends Cubit<CreateExamState> {
   }) async {
     emit(const CreateExamLoading());
     try {
-      // 1. Generate unique exam code
-      final uniqueCode = await _examCodeService.generateUniqueCode();
-
-      // 2. Generate random exam ID (UUID)
-      final examId = const Uuid().v4();
-
-      // 3. Construct ExamModel
-      final exam = ExamModel(
-        id: examId,
-        title: title,
-        description: description,
-        code: uniqueCode,
-        createdBy: guruId,
-        duration: duration,
-        startDate: startDate,
-        endDate: endDate,
-        isActive: true,
-        shuffleQuestions: shuffleQuestions,
-        shuffleOptions: shuffleOptions,
-        totalQuestions: 0,
-      );
-
-      // 4. Save to Firestore
-      await _firestoreService.addDocument(
-        path: FirestoreService.examsPath,
-        docId: examId,
-        data: exam.toJson(),
-      );
+      final data = await _firestoreService.call('createExam', {
+        'title': title.trim(),
+        'description': description.trim(),
+        'duration': duration,
+        'startDate': startDate.toUtc().toIso8601String(),
+        'endDate': endDate.toUtc().toIso8601String(),
+        'shuffleQuestions': shuffleQuestions,
+        'shuffleOptions': shuffleOptions,
+      });
+      final exam = ExamModel.fromJson(data);
 
       emit(CreateExamSuccess(exam));
     } catch (e) {

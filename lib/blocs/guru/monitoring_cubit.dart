@@ -50,7 +50,12 @@ class MonitoringActive extends MonitoringState {
   }
 
   @override
-  List<Object?> get props => [activeExams, selectedExamId, sessions, studentMap];
+  List<Object?> get props => [
+    activeExams,
+    selectedExamId,
+    sessions,
+    studentMap,
+  ];
 }
 
 class MonitoringError extends MonitoringState {
@@ -68,8 +73,8 @@ class MonitoringCubit extends Cubit<MonitoringState> {
   StreamSubscription<List<ExamSessionModel>>? _sessionsSubscription;
 
   MonitoringCubit({required FirestoreService firestoreService})
-      : _firestoreService = firestoreService,
-        super(const MonitoringInitial());
+    : _firestoreService = firestoreService,
+      super(const MonitoringInitial());
 
   @override
   Future<void> close() {
@@ -97,65 +102,80 @@ class MonitoringCubit extends Cubit<MonitoringState> {
         queryBuilder: (query) => query.where('role', isEqualTo: 'siswa'),
       );
 
-      final Map<String, UserModel> studentMap = {for (var s in students) s.uid: s};
+      final Map<String, UserModel> studentMap = {
+        for (var s in students) s.uid: s,
+      };
 
-      emit(MonitoringActive(
-        activeExams: activeExams,
-        selectedExamId: null,
-        sessions: const [],
-        studentMap: studentMap,
-      ));
+      emit(
+        MonitoringActive(
+          activeExams: activeExams,
+          selectedExamId: null,
+          sessions: const [],
+          studentMap: studentMap,
+        ),
+      );
     } catch (e) {
-      emit(MonitoringError('Gagal menginisialisasi pemantauan: ${e.toString()}'));
+      emit(
+        MonitoringError('Gagal menginisialisasi pemantauan: ${e.toString()}'),
+      );
     }
   }
 
   void selectExam(String examId) {
     final currentState = state;
-    if (currentState is! MonitoringActive) return;
+    if (currentState is! MonitoringActive) {
+      return;
+    }
 
     // Cancel existing subscription
     _sessionsSubscription?.cancel();
 
-    emit(currentState.copyWith(
-      selectedExamId: examId,
-      sessions: const [], // temporary clear
-    ));
+    emit(
+      currentState.copyWith(
+        selectedExamId: examId,
+        sessions: const [], // temporary clear
+      ),
+    );
 
     // Subscribe to real-time session changes for selected exam
-    _sessionsSubscription = _firestoreService.streamCollection<ExamSessionModel>(
-      path: FirestoreService.examSessionsPath,
-      fromJson: (json, id) => ExamSessionModel.fromJson(json, id: id),
-      queryBuilder: (query) => query.where('examId', isEqualTo: examId),
-    ).listen((sessions) {
-      final updatedState = state;
-      if (updatedState is MonitoringActive && updatedState.selectedExamId == examId) {
-        // Sort sessions: in_progress first, then newest startedAt
-        sessions.sort((a, b) {
-          if (a.status == 'in_progress' && b.status != 'in_progress') return -1;
-          if (a.status != 'in_progress' && b.status == 'in_progress') return 1;
-          return b.startedAt.compareTo(a.startedAt);
-        });
+    _sessionsSubscription = _firestoreService
+        .streamCollection<ExamSessionModel>(
+          path: FirestoreService.examSessionsPath,
+          fromJson: (json, id) => ExamSessionModel.fromJson(json, id: id),
+          queryBuilder: (query) => query.where('examId', isEqualTo: examId),
+        )
+        .listen(
+          (sessions) {
+            final updatedState = state;
+            if (updatedState is MonitoringActive &&
+                updatedState.selectedExamId == examId) {
+              // Sort sessions: in_progress first, then newest startedAt
+              sessions.sort((a, b) {
+                if (a.status == 'in_progress' && b.status != 'in_progress') {
+                  return -1;
+                }
+                if (a.status != 'in_progress' && b.status == 'in_progress') {
+                  return 1;
+                }
+                return b.startedAt.compareTo(a.startedAt);
+              });
 
-        emit(updatedState.copyWith(sessions: sessions));
-      }
-    }, onError: (error) {
-      emit(MonitoringError('Terjadi kesalahan saat memantau real-time: ${error.toString()}'));
-    });
+              emit(updatedState.copyWith(sessions: sessions));
+            }
+          },
+          onError: (error) {
+            emit(
+              MonitoringError(
+                'Terjadi kesalahan saat memantau real-time: ${error.toString()}',
+              ),
+            );
+          },
+        );
   }
 
   Future<void> forceSubmit(String sessionId) async {
     try {
-      final updateData = {
-        'status': 'auto_submitted',
-        'endedAt': DateTime.now().toIso8601String(),
-      };
-
-      await _firestoreService.updateDocument(
-        path: FirestoreService.examSessionsPath,
-        docId: sessionId,
-        data: updateData,
-      );
+      await _firestoreService.call('forceSubmit', {'sessionId': sessionId});
     } catch (e) {
       emit(MonitoringError('Gagal memaksa pengumpulan sesi: ${e.toString()}'));
     }

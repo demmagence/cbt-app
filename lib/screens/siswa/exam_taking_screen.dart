@@ -28,7 +28,6 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
   final AntiCheatManager _antiCheat = AntiCheatManager.instance;
   late final PageController _pageController;
   bool _showReview = false;
-  bool _timeUpDialogShown = false;
   String _examTitle = 'Ujian';
 
   @override
@@ -36,16 +35,18 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
     super.initState();
     _pageController = PageController(initialPage: 0);
 
-    _bloc = ExamSessionBloc(
-      firestoreService: context.read<FirestoreService>(),
-    );
+    _bloc = ExamSessionBloc(firestoreService: context.read<FirestoreService>());
 
     // Enable anti-cheat (immersive mode + lifecycle observer)
     _antiCheat.enable();
     _antiCheat.onAppSwitched((log) {
       _bloc.add(AppSwitchDetected(log));
       if (mounted) {
-        _showAppSwitchWarningDialog(context, log.duration, _antiCheat.getAppSwitchCount());
+        _showAppSwitchWarningDialog(
+          context,
+          log.duration,
+          _antiCheat.getAppSwitchCount(),
+        );
       }
     });
     _antiCheat.onResumed(() {
@@ -66,324 +67,404 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
     super.dispose();
   }
 
-
-
   @override
   Widget build(BuildContext context) {
-    _antiCheat.enforceFullscreen();
     return BlocProvider.value(
       value: _bloc,
       child: PopScope(
         canPop: false,
         onPopInvokedWithResult: (didPop, result) {
-          if (didPop) return;
+          if (didPop) {
+            return;
+          }
         },
         child: Scaffold(
           body: BlocConsumer<ExamSessionBloc, ExamSessionState>(
-          listener: (context, state) {
-            if (state is ExamSessionCompleted) {
-              context.go(
-                '/siswa/exam-success',
-                extra: {
-                  'examTitle': _examTitle,
-                  'pgScore': state.result.pgScore,
-                  'gradingStatus': state.result.gradingStatus,
-                },
-              );
-            } else if (state is ExamSessionActive) {
-              _examTitle = state.exam.title;
-              // Trigger "Waktu habis!" dialog when timer hits 0
-              if (state.remainingTime == 0 && !_timeUpDialogShown) {
-                _timeUpDialogShown = true;
-                _showTimeUpDialog(context);
+            listener: (context, state) {
+              if (state is ExamSessionCompleted) {
+                context.go(
+                  '/siswa/exam-success',
+                  extra: {
+                    'examTitle': _examTitle,
+                    'pgScore': state.result.pgScore,
+                    'gradingStatus': state.result.gradingStatus,
+                  },
+                );
+              } else if (state is ExamSessionActive) {
+                _examTitle = state.exam.title;
+                // Animate PageView to current page
+                if (_pageController.hasClients &&
+                    _pageController.page?.round() != state.currentIndex) {
+                  _pageController.animateToPage(
+                    state.currentIndex,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                }
               }
-              // Animate PageView to current page
-              if (_pageController.hasClients && _pageController.page?.round() != state.currentIndex) {
-                _pageController.animateToPage(
-                  state.currentIndex,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
+            },
+            builder: (context, state) {
+              if (state is ExamSessionLoading) {
+                return const Scaffold(
+                  body: LoadingWidget(message: 'Memuat lembar ujian...'),
                 );
               }
-            } else if (state is ExamSessionSubmitting) {
-              // Close any open dialogs (e.g., time's up dialog)
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop();
+
+              if (state is ExamSessionSubmitting) {
+                return Scaffold(
+                  body: state.error != null
+                      ? AppErrorWidget(
+                          errorMessage: state.error!,
+                          onRetry: () => _bloc.add(const ExamSubmitted()),
+                        )
+                      : const LoadingWidget(
+                          message: 'Mengirimkan lembar jawaban...',
+                        ),
+                );
               }
-            }
-          },
-          builder: (context, state) {
-            if (state is ExamSessionLoading) {
-              return const Scaffold(
-                body: LoadingWidget(message: 'Memuat lembar ujian...'),
-              );
-            }
 
-            if (state is ExamSessionSubmitting) {
-              return Scaffold(
-                body: LoadingWidget(
-                  message: state.isOffline
-                      ? 'Menunggu koneksi untuk mengirim jawaban...'
-                      : 'Mengirimkan lembar jawaban...',
-                ),
-              );
-            }
-
-            if (state is ExamSessionError) {
-              return Scaffold(
-                appBar: AppBar(
-                  leading: IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () => context.go('/siswa/dashboard'),
+              if (state is ExamSessionError) {
+                return Scaffold(
+                  appBar: AppBar(
+                    leading: IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () => context.go('/siswa/dashboard'),
+                    ),
                   ),
-                ),
-                body: AppErrorWidget(
-                  errorMessage: state.message,
-                  onRetry: () {
-                    final authState = context.read<AuthBloc>().state;
-                    if (authState is AuthAuthenticated) {
-                      _bloc.add(ExamStarted(examId: widget.examId, userId: authState.user.uid));
-                    }
-                  },
-                ),
-              );
-            }
-
-            if (state is ExamSessionActive) {
-              final question = state.questions[state.currentIndex];
-              final isLast = state.currentIndex == state.questions.length - 1;
-              final isFirst = state.currentIndex == 0;
-              final isFlagged = state.flaggedQuestions.contains(question.id);
-              final theme = Theme.of(context);
-
-              if (_showReview) {
-                return _buildReviewScaffold(context, state, theme);
+                  body: AppErrorWidget(
+                    errorMessage: state.message,
+                    onRetry: () {
+                      final authState = context.read<AuthBloc>().state;
+                      if (authState is AuthAuthenticated) {
+                        _bloc.add(
+                          ExamStarted(
+                            examId: widget.examId,
+                            userId: authState.user.uid,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                );
               }
 
-              return Scaffold(
-                appBar: AppBar(
-                  leading: const SizedBox.shrink(), // Disable leading arrow
-                  title: Column(
-                    children: [
-                      Text(state.exam.title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 2),
-                      CountdownTimer(remainingTime: state.remainingTime),
+              if (state is ExamSessionActive) {
+                final question = state.questions[state.currentIndex];
+                final isLast = state.currentIndex == state.questions.length - 1;
+                final isFirst = state.currentIndex == 0;
+                final isFlagged = state.flaggedQuestions.contains(question.id);
+                final theme = Theme.of(context);
+
+                if (_showReview) {
+                  return _buildReviewScaffold(context, state, theme);
+                }
+
+                return Scaffold(
+                  appBar: AppBar(
+                    leading: const SizedBox.shrink(), // Disable leading arrow
+                    title: Column(
+                      children: [
+                        Text(
+                          state.exam.title,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        CountdownTimer(remainingTime: state.remainingTime),
+                      ],
+                    ),
+                    actions: [
+                      IconButton(
+                        icon: const Icon(Icons.assignment_turned_in_rounded),
+                        tooltip: 'Review Ujian',
+                        onPressed: () {
+                          setState(() {
+                            _showReview = true;
+                          });
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.grid_view_rounded),
+                        tooltip: 'Navigasi Soal',
+                        onPressed: () => _showQuestionPalette(context, state),
+                      ),
                     ],
                   ),
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.assignment_turned_in_rounded),
-                      tooltip: 'Review Ujian',
-                      onPressed: () {
-                        setState(() {
-                          _showReview = true;
-                        });
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.grid_view_rounded),
-                      tooltip: 'Navigasi Soal',
-                      onPressed: () => _showQuestionPalette(context, state),
-                    ),
-                  ],
-                ),
-                body: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (state.isOffline) _buildOfflineBanner(theme),
-                        // Question Header
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Soal Nomor ${state.currentIndex + 1} dari ${state.questions.length}',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.bold,
-                              ),
+                  body: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (state.isOffline) _buildOfflineBanner(theme),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              state.saveMessage,
+                              style: theme.textTheme.labelSmall,
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: question.isPg ? Colors.blue.withValues(alpha: 0.15) : Colors.purple.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                question.isPg ? 'Pilihan Ganda' : 'Essay',
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: question.isPg ? Colors.blue : Colors.purple,
+                          ),
+                          // Question Header
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Soal Nomor ${state.currentIndex + 1} dari ${state.questions.length}',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        
-                        // Question Text Card
-                        Expanded(
-                          child: PageView.builder(
-                            controller: _pageController,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: state.questions.length,
-                            itemBuilder: (context, index) {
-                              final q = state.questions[index];
-                              return SingleChildScrollView(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    Card(
-                                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(16.0),
-                                        child: Text(
-                                          q.text,
-                                          style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 20),
-
-                                    // Answer Options / Text Field
-                                    if (q.isPg && q.options != null)
-                                      _buildPgOptions(q, state, theme)
-                                    else if (q.isEssay)
-                                      EssayAnswerField(
-                                        key: ValueKey(q.id),
-                                        initialText: state.session.answers[q.id]?.toString() ?? '',
-                                        onAutoSave: (text) {
-                                          _bloc.add(EssayAnswerUpdated(
-                                            questionId: q.id,
-                                            text: text,
-                                          ));
-                                        },
-                                      ),
-                                  ],
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
                                 ),
-                              );
-                            },
-                          ),
-                        ),
-
-                        // Navigation Footer
-                        const Divider(),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              // Previous
-                              Flexible(
-                                child: OutlinedButton.icon(
-                                  style: OutlinedButton.styleFrom(
-                                    minimumSize: const Size(60, 48),
-                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                  ),
-                                  onPressed: isFirst ? null : () => _bloc.add(QuestionNavigated(state.currentIndex - 1)),
-                                  icon: const Icon(Icons.chevron_left_rounded, size: 20),
-                                  label: const FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text('Sebelumnya'),
-                                  ),
+                                decoration: BoxDecoration(
+                                  color: question.isPg
+                                      ? Colors.blue.withValues(alpha: 0.15)
+                                      : Colors.purple.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(6),
                                 ),
-                              ),
-                              const SizedBox(width: 4),
-
-                              // Flag / Ragu-ragu
-                              Flexible(
-                                child: SizedBox(
-                                  height: 48,
-                                  child: InkWell(
-                                    onTap: () => _bloc.add(FlagToggled(question.id)),
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Container(
-                                      alignment: Alignment.center,
-                                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                                      decoration: BoxDecoration(
-                                        color: isFlagged ? Colors.amber.withValues(alpha: 0.15) : Colors.transparent,
-                                        border: Border.all(
-                                          color: isFlagged ? Colors.amber : theme.colorScheme.outline.withValues(alpha: 0.3),
-                                        ),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              isFlagged ? Icons.warning_rounded : Icons.warning_amber_rounded,
-                                              color: isFlagged ? Colors.amber : theme.colorScheme.onSurfaceVariant,
-                                              size: 20,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              'Ragu-Ragu',
-                                              style: theme.textTheme.bodyMedium?.copyWith(
-                                                fontWeight: FontWeight.w600,
-                                                color: isFlagged ? Colors.amber[800] : theme.colorScheme.onSurfaceVariant,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-
-                              // Next / Selesai
-                              Flexible(
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: isLast ? Colors.green : theme.colorScheme.primary,
-                                    foregroundColor: Colors.white,
-                                    minimumSize: const Size(60, 48),
-                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                  ),
-                                  onPressed: () {
-                                    if (isLast) {
-                                      setState(() {
-                                        _showReview = true;
-                                      });
-                                    } else {
-                                      _bloc.add(QuestionNavigated(state.currentIndex + 1));
-                                    }
-                                  },
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(isLast ? 'Selesai' : 'Berikutnya'),
-                                        const SizedBox(width: 4),
-                                        Icon(isLast ? Icons.check_circle_outline : Icons.chevron_right_rounded, size: 20),
-                                      ],
-                                    ),
+                                child: Text(
+                                  question.isPg ? 'Pilihan Ganda' : 'Essay',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: question.isPg
+                                        ? Colors.blue
+                                        : Colors.purple,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 16),
+
+                          // Question Text Card
+                          Expanded(
+                            child: PageView.builder(
+                              controller: _pageController,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: state.questions.length,
+                              itemBuilder: (context, index) {
+                                final q = state.questions[index];
+                                return SingleChildScrollView(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Card(
+                                        color: theme
+                                            .colorScheme
+                                            .surfaceContainerHighest
+                                            .withValues(alpha: 0.2),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Text(
+                                            q.text,
+                                            style: theme.textTheme.bodyLarge
+                                                ?.copyWith(height: 1.5),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 20),
+
+                                      // Answer Options / Text Field
+                                      if (q.isPg && q.options != null)
+                                        _buildPgOptions(q, state, theme)
+                                      else if (q.isEssay)
+                                        EssayAnswerField(
+                                          key: ValueKey(q.id),
+                                          initialText:
+                                              state.session.answers[q.id]
+                                                  ?.toString() ??
+                                              '',
+                                          onChanged: (text) {
+                                            _bloc.add(
+                                              EssayAnswerUpdated(
+                                                questionId: q.id,
+                                                text: text,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+
+                          // Navigation Footer
+                          const Divider(),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                // Previous
+                                Flexible(
+                                  child: OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      minimumSize: const Size(60, 48),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                      ),
+                                    ),
+                                    onPressed: isFirst
+                                        ? null
+                                        : () => _bloc.add(
+                                            QuestionNavigated(
+                                              state.currentIndex - 1,
+                                            ),
+                                          ),
+                                    icon: const Icon(
+                                      Icons.chevron_left_rounded,
+                                      size: 20,
+                                    ),
+                                    label: const FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text('Sebelumnya'),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+
+                                // Flag / Ragu-ragu
+                                Flexible(
+                                  child: SizedBox(
+                                    height: 48,
+                                    child: InkWell(
+                                      onTap: () =>
+                                          _bloc.add(FlagToggled(question.id)),
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Container(
+                                        alignment: Alignment.center,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isFlagged
+                                              ? Colors.amber.withValues(
+                                                  alpha: 0.15,
+                                                )
+                                              : Colors.transparent,
+                                          border: Border.all(
+                                            color: isFlagged
+                                                ? Colors.amber
+                                                : theme.colorScheme.outline
+                                                      .withValues(alpha: 0.3),
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                isFlagged
+                                                    ? Icons.warning_rounded
+                                                    : Icons
+                                                          .warning_amber_rounded,
+                                                color: isFlagged
+                                                    ? Colors.amber
+                                                    : theme
+                                                          .colorScheme
+                                                          .onSurfaceVariant,
+                                                size: 20,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                'Ragu-Ragu',
+                                                style: theme
+                                                    .textTheme
+                                                    .bodyMedium
+                                                    ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: isFlagged
+                                                          ? Colors.amber[800]
+                                                          : theme
+                                                                .colorScheme
+                                                                .onSurfaceVariant,
+                                                    ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+
+                                // Next / Selesai
+                                Flexible(
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: isLast
+                                          ? Colors.green
+                                          : theme.colorScheme.primary,
+                                      foregroundColor: Colors.white,
+                                      minimumSize: const Size(60, 48),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                      ),
+                                    ),
+                                    onPressed: () {
+                                      if (isLast) {
+                                        setState(() {
+                                          _showReview = true;
+                                        });
+                                      } else {
+                                        _bloc.add(
+                                          QuestionNavigated(
+                                            state.currentIndex + 1,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            isLast ? 'Selesai' : 'Berikutnya',
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Icon(
+                                            isLast
+                                                ? Icons.check_circle_outline
+                                                : Icons.chevron_right_rounded,
+                                            size: 20,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              );
-            }
+                );
+              }
 
-            return const SizedBox.shrink();
-          },
+              return const SizedBox.shrink();
+            },
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildOfflineBanner(ThemeData theme) {
     return Container(
@@ -392,10 +473,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
       decoration: BoxDecoration(
         color: Colors.amber.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.amber.shade300,
-          width: 1,
-        ),
+        border: Border.all(color: Colors.amber.shade300, width: 1),
       ),
       child: Row(
         children: [
@@ -413,7 +491,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                   ),
                 ),
                 Text(
-                  'Jawaban Anda akan disimpan lokal dan disinkronkan otomatis saat online.',
+                  'Draf disimpan lokal. Sambungkan kembali sebelum waktu habis agar jawaban diterima server.',
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontSize: 10.5,
                     color: Colors.amber.shade900.withValues(alpha: 0.85),
@@ -427,7 +505,11 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
     );
   }
 
-  Widget _buildPgOptions(QuestionModel question, ExamSessionActive state, ThemeData theme) {
+  Widget _buildPgOptions(
+    QuestionModel question,
+    ExamSessionActive state,
+    ThemeData theme,
+  ) {
     final optionOrder = state.session.optionOrders[question.id] ?? [];
     final answers = state.session.answers;
 
@@ -437,20 +519,28 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
       itemCount: question.options!.length,
       separatorBuilder: (context, index) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
-        final originalIndex = optionOrder.isNotEmpty ? optionOrder[index] : index;
+        final originalIndex = optionOrder.isNotEmpty
+            ? optionOrder[index]
+            : index;
         final optionText = question.options![originalIndex];
         final isSelected = answers[question.id] == index;
         final optionLabel = String.fromCharCode(65 + index); // A, B, C, D, E...
 
         return InkWell(
-          onTap: () => _bloc.add(AnswerSelected(questionId: question.id, answerIndex: index)),
+          onTap: () => _bloc.add(
+            AnswerSelected(questionId: question.id, answerIndex: index),
+          ),
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: isSelected ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3) : theme.colorScheme.surface,
+              color: isSelected
+                  ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
+                  : theme.colorScheme.surface,
               border: Border.all(
-                color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline.withValues(alpha: 0.2),
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.outline.withValues(alpha: 0.2),
                 width: isSelected ? 2 : 1,
               ),
               borderRadius: BorderRadius.circular(12),
@@ -461,7 +551,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: isSelected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.surfaceContainerHighest,
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
@@ -469,7 +561,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                     optionLabel,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant,
+                      color: isSelected
+                          ? Colors.white
+                          : theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -478,8 +572,12 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                   child: Text(
                     optionText,
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                     ),
                   ),
                 ),
@@ -490,7 +588,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline.withValues(alpha: 0.5),
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.outline.withValues(alpha: 0.5),
                       width: 2,
                     ),
                   ),
@@ -532,7 +632,11 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
   }
 
   /// Shows a warning dialog when the student switches away from the app.
-  void _showAppSwitchWarningDialog(BuildContext context, int durationSeconds, int violationCount) {
+  void _showAppSwitchWarningDialog(
+    BuildContext context,
+    int durationSeconds,
+    int violationCount,
+  ) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -575,10 +679,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
             Text(
               'Semua pelanggaran dicatat dan akan dilaporkan ke pengawas ujian.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -603,45 +704,12 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
 
   /// Shows the "Waktu Habis" dialog when the exam timer expires.
   /// The BLoC will handle the actual auto-submission after the dialog is shown.
-  void _showTimeUpDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.timer_off_rounded, color: Colors.red, size: 48),
-        title: const Text(
-          'Waktu Habis!',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          'Waktu ujian telah berakhir. Jawaban Anda akan otomatis dikumpulkan.',
-          textAlign: TextAlign.center,
-        ),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: [
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed: () => Navigator.of(ctx).pop(),
-            icon: const Icon(Icons.send_rounded),
-            label: const Text('OK, Kumpulkan Sekarang'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _onPressSubmit(BuildContext context, ExamSessionActive state) {
     int unansweredCount = 0;
     for (final q in state.questions) {
-      final hasAnswer = state.session.answers.containsKey(q.id) &&
+      final hasAnswer =
+          state.session.answers.containsKey(q.id) &&
           (state.session.answers[q.id]?.toString().trim().isNotEmpty ?? false);
       if (!hasAnswer) {
         unansweredCount++;
@@ -674,7 +742,11 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
     );
   }
 
-  Widget _buildReviewScaffold(BuildContext context, ExamSessionActive state, ThemeData theme) {
+  Widget _buildReviewScaffold(
+    BuildContext context,
+    ExamSessionActive state,
+    ThemeData theme,
+  ) {
     int totalPG = 0;
     int answeredPG = 0;
     int totalEssay = 0;
@@ -682,14 +754,19 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
     int unansweredCount = 0;
 
     for (final q in state.questions) {
-      final hasAnswer = state.session.answers.containsKey(q.id) &&
+      final hasAnswer =
+          state.session.answers.containsKey(q.id) &&
           (state.session.answers[q.id]?.toString().trim().isNotEmpty ?? false);
       if (q.isPg) {
         totalPG++;
-        if (hasAnswer) answeredPG++;
+        if (hasAnswer) {
+          answeredPG++;
+        }
       } else if (q.isEssay) {
         totalEssay++;
-        if (hasAnswer) answeredEssay++;
+        if (hasAnswer) {
+          answeredEssay++;
+        }
       }
       if (!hasAnswer) {
         unansweredCount++;
@@ -698,7 +775,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
 
     final totalQuestions = state.questions.length;
     final totalAnswered = answeredPG + answeredEssay;
-    final progress = totalQuestions > 0 ? (totalAnswered / totalQuestions) : 0.0;
+    final progress = totalQuestions > 0
+        ? (totalAnswered / totalQuestions)
+        : 0.0;
 
     return Scaffold(
       appBar: AppBar(
@@ -723,7 +802,11 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
           children: [
             if (state.isOffline)
               Padding(
-                padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0),
+                padding: const EdgeInsets.only(
+                  left: 16.0,
+                  right: 16.0,
+                  top: 16.0,
+                ),
                 child: _buildOfflineBanner(theme),
               ),
             // Stats Header Card
@@ -731,7 +814,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Card(
                 elevation: 0,
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.3,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                   side: BorderSide(
@@ -764,7 +849,10 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                             ],
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: unansweredCount > 0
                                   ? Colors.orange.withValues(alpha: 0.15)
@@ -772,9 +860,13 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              unansweredCount > 0 ? '$unansweredCount Belum Dijawab' : 'Semua Terjawab',
+                              unansweredCount > 0
+                                  ? '$unansweredCount Belum Dijawab'
+                                  : 'Semua Terjawab',
                               style: theme.textTheme.labelMedium?.copyWith(
-                                color: unansweredCount > 0 ? Colors.orange[800] : Colors.green[800],
+                                color: unansweredCount > 0
+                                    ? Colors.orange[800]
+                                    : Colors.green[800],
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -787,9 +879,12 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                         child: LinearProgressIndicator(
                           value: progress,
                           minHeight: 8,
-                          backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                          backgroundColor:
+                              theme.colorScheme.surfaceContainerHighest,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            unansweredCount > 0 ? theme.colorScheme.primary : Colors.green,
+                            unansweredCount > 0
+                                ? theme.colorScheme.primary
+                                : Colors.green,
                           ),
                         ),
                       ),
@@ -797,8 +892,16 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildStatItem('Pilihan Ganda', '$answeredPG / $totalPG', theme),
-                          _buildStatItem('Essay', '$answeredEssay / $totalEssay', theme),
+                          _buildStatItem(
+                            'Pilihan Ganda',
+                            '$answeredPG / $totalPG',
+                            theme,
+                          ),
+                          _buildStatItem(
+                            'Essay',
+                            '$answeredEssay / $totalEssay',
+                            theme,
+                          ),
                         ],
                       ),
                     ],
@@ -814,8 +917,13 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                 itemCount: totalQuestions,
                 itemBuilder: (context, index) {
                   final q = state.questions[index];
-                  final hasAnswer = state.session.answers.containsKey(q.id) &&
-                      (state.session.answers[q.id]?.toString().trim().isNotEmpty ?? false);
+                  final hasAnswer =
+                      state.session.answers.containsKey(q.id) &&
+                      (state.session.answers[q.id]
+                              ?.toString()
+                              .trim()
+                              .isNotEmpty ??
+                          false);
                   final isFlagged = state.flaggedQuestions.contains(q.id);
 
                   return Card(
@@ -842,7 +950,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                       },
                       leading: CircleAvatar(
                         backgroundColor: hasAnswer
-                            ? (q.isPg ? theme.colorScheme.primary : Colors.green[600])
+                            ? (q.isPg
+                                  ? theme.colorScheme.primary
+                                  : Colors.green[600])
                             : Colors.orange[200],
                         foregroundColor: Colors.white,
                         radius: 18,
@@ -870,7 +980,10 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                           if (isFlagged) ...[
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.amber.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(4),
@@ -887,9 +1000,15 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                         ],
                       ),
                       trailing: hasAnswer
-                          ? Icon(Icons.check_circle_rounded, color: Colors.green[600])
+                          ? Icon(
+                              Icons.check_circle_rounded,
+                              color: Colors.green[600],
+                            )
                           : Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.orange.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(6),

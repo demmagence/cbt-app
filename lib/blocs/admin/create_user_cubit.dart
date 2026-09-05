@@ -1,7 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../../models/user_model.dart';
-import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 
 // States
@@ -48,15 +46,11 @@ class CreateUserError extends CreateUserState {
 
 // Cubit
 class CreateUserCubit extends Cubit<CreateUserState> {
-  final AuthService _authService;
   final FirestoreService _firestoreService;
 
-  CreateUserCubit({
-    required AuthService authService,
-    required FirestoreService firestoreService,
-  })  : _authService = authService,
-        _firestoreService = firestoreService,
-        super(const CreateUserInitial());
+  CreateUserCubit({required FirestoreService firestoreService})
+    : _firestoreService = firestoreService,
+      super(const CreateUserInitial());
 
   Future<void> createUser({
     required String name,
@@ -66,36 +60,22 @@ class CreateUserCubit extends Cubit<CreateUserState> {
   }) async {
     emit(const CreateUserLoading());
     try {
-      // 1. Create auth credentials using dynamic tempApp
-      final userCredential = await _authService.createUserAccount(email, password);
-      final uid = userCredential.user?.uid;
-      
-      if (uid == null) {
-        throw Exception('Gagal mendapatkan UID dari Firebase Authentication.');
-      }
+      await _firestoreService.call('manageUser', {
+        'action': 'create',
+        'name': name.trim(),
+        'email': email.trim(),
+        'password': password,
+        'role': role,
+      });
 
-      // 2. Create UserModel & save to Firestore
-      final newUser = UserModel(
-        uid: uid,
-        name: name,
-        email: email,
-        role: role,
-        createdAt: DateTime.now(),
-        isActive: true,
+      emit(
+        CreateUserSuccess(
+          name: name,
+          email: email,
+          password: password,
+          role: role,
+        ),
       );
-
-      await _firestoreService.addDocument(
-        path: FirestoreService.usersPath,
-        docId: uid,
-        data: newUser.toJson(),
-      );
-
-      emit(CreateUserSuccess(
-        name: name,
-        email: email,
-        password: password,
-        role: role,
-      ));
     } catch (e) {
       emit(CreateUserError(_parseError(e)));
     }
