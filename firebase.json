@@ -16,7 +16,7 @@
       "android": {
         "default": {
           "projectId": "cbt-app-wibisana",
-          "appId": "1:210353983182:android:64f562278d0bbe18564a9f",
+          "appId": "1:210353983182:android:8cad32f63a4129b6564a9f",
           "fileOutput": "android/app/google-services.json"
         }
       },
@@ -24,7 +24,7 @@
         "lib/firebase_options.dart": {
           "projectId": "cbt-app-wibisana",
           "configurations": {
-            "android": "1:210353983182:android:64f562278d0bbe18564a9f"
+            "android": "1:210353983182:android:8cad32f63a4129b6564a9f"
           }
         }
       }
