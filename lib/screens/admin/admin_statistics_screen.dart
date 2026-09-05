@@ -60,7 +60,8 @@ class _AdminStatisticsViewState extends State<AdminStatisticsView> {
             if (state is AdminStatisticsError) {
               return AppErrorWidget(
                 errorMessage: state.message,
-                onRetry: () => context.read<AdminStatisticsCubit>().loadStatistics(),
+                onRetry: () =>
+                    context.read<AdminStatisticsCubit>().loadStatistics(),
               );
             }
 
@@ -68,7 +69,8 @@ class _AdminStatisticsViewState extends State<AdminStatisticsView> {
               if (state.totalExamsCount == 0) {
                 return const EmptyStateWidget(
                   title: 'Data Statistik Belum Ada',
-                  description: 'Ujian belum dibuat oleh guru atau belum diselesaikan oleh siswa.',
+                  description:
+                      'Ujian belum dibuat oleh guru atau belum diselesaikan oleh siswa.',
                   icon: Icons.analytics_outlined,
                 );
               }
@@ -110,16 +112,19 @@ class _AdminStatisticsViewState extends State<AdminStatisticsView> {
     );
   }
 
-  Widget _buildKPIIndicators(BuildContext context, AdminStatisticsLoaded state) {
-    final isDesktop = MediaQuery.of(context).size.width > 600;
+  Widget _buildKPIIndicators(
+    BuildContext context,
+    AdminStatisticsLoaded state,
+  ) {
+    final isWideScreen = MediaQuery.of(context).size.width > 600;
 
     return GridView.count(
-      crossAxisCount: isDesktop ? 3 : 3,
+      crossAxisCount: 3,
       crossAxisSpacing: 10,
       mainAxisSpacing: 10,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: isDesktop ? 1.8 : 0.95,
+      childAspectRatio: isWideScreen ? 1.8 : 0.95,
       children: [
         _buildKPICard(
           context: context,
@@ -268,9 +273,16 @@ class _AdminStatisticsViewState extends State<AdminStatisticsView> {
                   barTouchData: BarTouchData(
                     enabled: true,
                     touchTooltipData: BarTouchTooltipData(
-                      getTooltipColor: (group) => theme.colorScheme.primaryContainer,
-                      tooltipBorder: BorderSide(color: theme.colorScheme.primary, width: 1),
-                      tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      getTooltipColor: (group) =>
+                          theme.colorScheme.primaryContainer,
+                      tooltipBorder: BorderSide(
+                        color: theme.colorScheme.primary,
+                        width: 1,
+                      ),
+                      tooltipPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                         return BarTooltipItem(
                           '${rod.toY.toInt()} Ujian',
@@ -324,16 +336,18 @@ class _AdminStatisticsViewState extends State<AdminStatisticsView> {
                         reservedSize: 28,
                       ),
                     ),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                   ),
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
-                    getDrawingHorizontalLine: (value) => FlLine(
-                      color: AppColors.surfaceVariant,
-                      strokeWidth: 1,
-                    ),
+                    getDrawingHorizontalLine: (value) =>
+                        FlLine(color: AppColors.surfaceVariant, strokeWidth: 1),
                   ),
                   borderData: FlBorderData(show: false),
                   barGroups: barGroups,
@@ -390,10 +404,8 @@ class _AdminStatisticsViewState extends State<AdminStatisticsView> {
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
-                    getDrawingHorizontalLine: (value) => FlLine(
-                      color: AppColors.surfaceVariant,
-                      strokeWidth: 1,
-                    ),
+                    getDrawingHorizontalLine: (value) =>
+                        FlLine(color: AppColors.surfaceVariant, strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
                     show: true,
@@ -437,16 +449,27 @@ class _AdminStatisticsViewState extends State<AdminStatisticsView> {
                         reservedSize: 28,
                       ),
                     ),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                   ),
                   borderData: FlBorderData(show: false),
                   lineTouchData: LineTouchData(
                     enabled: true,
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (spot) => theme.colorScheme.primaryContainer,
-                      tooltipBorder: BorderSide(color: theme.colorScheme.primary, width: 1),
-                      tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      getTooltipColor: (spot) =>
+                          theme.colorScheme.primaryContainer,
+                      tooltipBorder: BorderSide(
+                        color: theme.colorScheme.primary,
+                        width: 1,
+                      ),
+                      tooltipPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
                           return LineTooltipItem(
@@ -468,16 +491,19 @@ class _AdminStatisticsViewState extends State<AdminStatisticsView> {
                       color: theme.colorScheme.primary,
                       belowBarData: BarAreaData(
                         show: true,
-                        color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                        color: theme.colorScheme.primary.withValues(
+                          alpha: 0.15,
+                        ),
                       ),
                       dotData: FlDotData(
                         show: true,
-                        getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                          radius: 4,
-                          color: theme.colorScheme.primary,
-                          strokeWidth: 2,
-                          strokeColor: theme.colorScheme.surface,
-                        ),
+                        getDotPainter: (spot, percent, barData, index) =>
+                            FlDotCirclePainter(
+                              radius: 4,
+                              color: theme.colorScheme.primary,
+                              strokeWidth: 2,
+                              strokeColor: theme.colorScheme.surface,
+                            ),
                       ),
                     ),
                   ],
@@ -490,10 +516,19 @@ class _AdminStatisticsViewState extends State<AdminStatisticsView> {
     );
   }
 
-  Widget _buildDistributionSection(ThemeData theme, AdminStatisticsLoaded state) {
-    final activePct = state.totalExamsCount == 0 ? 0.0 : state.activeExamsCount / state.totalExamsCount;
-    final scheduledPct = state.totalExamsCount == 0 ? 0.0 : state.scheduledExamsCount / state.totalExamsCount;
-    final endedPct = state.totalExamsCount == 0 ? 0.0 : state.endedExamsCount / state.totalExamsCount;
+  Widget _buildDistributionSection(
+    ThemeData theme,
+    AdminStatisticsLoaded state,
+  ) {
+    final activePct = state.totalExamsCount == 0
+        ? 0.0
+        : state.activeExamsCount / state.totalExamsCount;
+    final scheduledPct = state.totalExamsCount == 0
+        ? 0.0
+        : state.scheduledExamsCount / state.totalExamsCount;
+    final endedPct = state.totalExamsCount == 0
+        ? 0.0
+        : state.endedExamsCount / state.totalExamsCount;
 
     return Card(
       elevation: 0,
@@ -580,7 +615,10 @@ class _AdminStatisticsViewState extends State<AdminStatisticsView> {
     );
   }
 
-  Widget _buildGuruRankingSection(ThemeData theme, AdminStatisticsLoaded state) {
+  Widget _buildGuruRankingSection(
+    ThemeData theme,
+    AdminStatisticsLoaded state,
+  ) {
     return Card(
       elevation: 0,
       child: Padding(
@@ -609,7 +647,9 @@ class _AdminStatisticsViewState extends State<AdminStatisticsView> {
                     child: Center(
                       child: Text(
                         'Belum ada pembuatan ujian.',
-                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
                   )
@@ -617,7 +657,8 @@ class _AdminStatisticsViewState extends State<AdminStatisticsView> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: state.topGurus.length,
-                    separatorBuilder: (context, index) => const Divider(height: 12),
+                    separatorBuilder: (context, index) =>
+                        const Divider(height: 12),
                     itemBuilder: (context, index) {
                       final item = state.topGurus[index];
                       final rank = index + 1;
@@ -646,9 +687,14 @@ class _AdminStatisticsViewState extends State<AdminStatisticsView> {
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                              color: theme.colorScheme.primary.withValues(
+                                alpha: 0.1,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(

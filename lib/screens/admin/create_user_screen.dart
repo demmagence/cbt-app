@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../blocs/admin/create_user_cubit.dart';
-import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/common/loading_widget.dart';
 import '../../config/theme/app_colors.dart';
@@ -15,10 +14,8 @@ class CreateUserScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<CreateUserCubit>(
-      create: (context) => CreateUserCubit(
-        authService: context.read<AuthService>(),
-        firestoreService: context.read<FirestoreService>(),
-      ),
+      create: (context) =>
+          CreateUserCubit(firestoreService: context.read<FirestoreService>()),
       child: const CreateUserView(),
     );
   }
@@ -36,7 +33,7 @@ class _CreateUserViewState extends State<CreateUserView> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   String _selectedRole = 'siswa';
   bool _obscurePassword = true;
 
@@ -49,9 +46,13 @@ class _CreateUserViewState extends State<CreateUserView> {
   }
 
   String _generateRandomPassword() {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const chars =
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final rand = math.Random();
-    return List.generate(8, (index) => chars[rand.nextInt(chars.length)]).join();
+    return List.generate(
+      8,
+      (index) => chars[rand.nextInt(chars.length)],
+    ).join();
   }
 
   void _onGeneratePasswordPressed() {
@@ -115,7 +116,9 @@ class _CreateUserViewState extends State<CreateUserView> {
         },
         builder: (context, state) {
           if (state is CreateUserLoading) {
-            return const LoadingWidget(message: 'Mendaftarkan pengguna baru...');
+            return const LoadingWidget(
+              message: 'Mendaftarkan pengguna baru...',
+            );
           }
 
           if (state is CreateUserSuccess) {
@@ -243,18 +246,9 @@ class _CreateUserViewState extends State<CreateUserView> {
                 prefixIcon: Icon(Icons.manage_accounts_outlined),
               ),
               items: const [
-                DropdownMenuItem(
-                  value: 'siswa',
-                  child: Text('Siswa'),
-                ),
-                DropdownMenuItem(
-                  value: 'guru',
-                  child: Text('Guru'),
-                ),
-                DropdownMenuItem(
-                  value: 'admin',
-                  child: Text('Admin'),
-                ),
+                DropdownMenuItem(value: 'siswa', child: Text('Siswa')),
+                DropdownMenuItem(value: 'guru', child: Text('Guru')),
+                DropdownMenuItem(value: 'admin', child: Text('Admin')),
               ],
               onChanged: (value) {
                 if (value != null) {
@@ -278,8 +272,13 @@ class _CreateUserViewState extends State<CreateUserView> {
     );
   }
 
-  Widget _buildSuccessScreen(BuildContext context, CreateUserSuccess state, ThemeData theme) {
-    final credentialsText = 'Nama: ${state.name}\nEmail: ${state.email}\nSandi: ${state.password}\nPeran: ${state.role.toUpperCase()}';
+  Widget _buildSuccessScreen(
+    BuildContext context,
+    CreateUserSuccess state,
+    ThemeData theme,
+  ) {
+    final credentialsText =
+        'Nama: ${state.name}\nEmail: ${state.email}\nSandi: ${state.password}\nPeran: ${state.role.toUpperCase()}';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
@@ -323,7 +322,9 @@ class _CreateUserViewState extends State<CreateUserView> {
             color: AppColors.surfaceVariant.withValues(alpha: 0.3),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
+              side: BorderSide(
+                color: theme.colorScheme.outline.withValues(alpha: 0.2),
+              ),
             ),
             child: Padding(
               padding: const EdgeInsets.all(20.0),
@@ -333,9 +334,18 @@ class _CreateUserViewState extends State<CreateUserView> {
                   const Divider(height: 20),
                   _buildCredentialRow('Alamat Email', state.email, theme),
                   const Divider(height: 20),
-                  _buildCredentialRow('Kata Sandi', state.password, theme, isBoldValue: true),
+                  _buildCredentialRow(
+                    'Kata Sandi',
+                    state.password,
+                    theme,
+                    isBoldValue: true,
+                  ),
                   const Divider(height: 20),
-                  _buildCredentialRow('Peran Akun', state.role.toUpperCase(), theme),
+                  _buildCredentialRow(
+                    'Peran Akun',
+                    state.role.toUpperCase(),
+                    theme,
+                  ),
                 ],
               ),
             ),
@@ -372,10 +382,7 @@ class _CreateUserViewState extends State<CreateUserView> {
                       shape: const StadiumBorder(),
                     ),
                     onPressed: () => context.go('/admin/users'),
-                    child: const Text(
-                      'Ke Daftar',
-                      textAlign: TextAlign.center,
-                    ),
+                    child: const Text('Ke Daftar', textAlign: TextAlign.center),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -400,7 +407,12 @@ class _CreateUserViewState extends State<CreateUserView> {
     );
   }
 
-  Widget _buildCredentialRow(String label, String value, ThemeData theme, {bool isBoldValue = false}) {
+  Widget _buildCredentialRow(
+    String label,
+    String value,
+    ThemeData theme, {
+    bool isBoldValue = false,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

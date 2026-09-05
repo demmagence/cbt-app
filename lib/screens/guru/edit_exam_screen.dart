@@ -15,9 +15,9 @@ class EditExamScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<EditExamCubit>(
-      create: (context) => EditExamCubit(
-        firestoreService: context.read<FirestoreService>(),
-      )..loadExam(examId),
+      create: (context) =>
+          EditExamCubit(firestoreService: context.read<FirestoreService>())
+            ..loadExam(examId),
       child: EditExamForm(examId: examId),
     );
   }
@@ -68,13 +68,18 @@ class _EditExamFormState extends State<EditExamForm> {
 
   Future<void> _selectEndDate(BuildContext context) async {
     final now = DateTime.now();
-    final initialDate = _endDate ?? (_startDate ?? now).add(const Duration(hours: 2));
+    final initialDate =
+        _endDate ?? (_startDate ?? now).add(const Duration(hours: 2));
     final DateTime? picked = await _selectDateTime(context, initialDate);
     if (picked != null) {
-      if (!context.mounted) return;
+      if (!context.mounted) {
+        return;
+      }
       if (_startDate != null && picked.isBefore(_startDate!)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Waktu selesai harus setelah waktu mulai!')),
+          const SnackBar(
+            content: Text('Waktu selesai harus setelah waktu mulai!'),
+          ),
         );
         return;
       }
@@ -84,21 +89,32 @@ class _EditExamFormState extends State<EditExamForm> {
     }
   }
 
-  Future<DateTime?> _selectDateTime(BuildContext context, DateTime initialValue) async {
+  Future<DateTime?> _selectDateTime(
+    BuildContext context,
+    DateTime initialValue,
+  ) async {
     final date = await showDatePicker(
       context: context,
       initialDate: initialValue,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)), // allow past dates for already started exams
+      firstDate: DateTime.now().subtract(
+        const Duration(days: 365),
+      ), // allow past dates for already started exams
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    if (date == null) return null;
+    if (date == null) {
+      return null;
+    }
 
-    if (!context.mounted) return null;
+    if (!context.mounted) {
+      return null;
+    }
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(initialValue),
     );
-    if (time == null) return null;
+    if (time == null) {
+      return null;
+    }
 
     return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
@@ -119,16 +135,16 @@ class _EditExamFormState extends State<EditExamForm> {
       }
 
       context.read<EditExamCubit>().updateExam(
-            examId: widget.examId,
-            title: _titleController.text.trim(),
-            description: _descriptionController.text.trim(),
-            duration: int.parse(_durationController.text.trim()),
-            startDate: _startDate!,
-            endDate: _endDate!,
-            shuffleQuestions: _shuffleQuestions,
-            shuffleOptions: _shuffleOptions,
-            isActive: _isActive,
-          );
+        examId: widget.examId,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        duration: int.parse(_durationController.text.trim()),
+        startDate: _startDate!,
+        endDate: _endDate!,
+        shuffleQuestions: _shuffleQuestions,
+        shuffleOptions: _shuffleOptions,
+        isActive: _isActive,
+      );
     }
   }
 
@@ -154,13 +170,15 @@ class _EditExamFormState extends State<EditExamForm> {
         listener: (context, state) {
           if (state is EditExamSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Detail ujian berhasil diperbarui!')),
+              const SnackBar(
+                content: Text('Detail ujian berhasil diperbarui!'),
+              ),
             );
             Navigator.pop(context); // Kembali ke daftar ujian
           } else if (state is EditExamError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
           } else if (state is EditExamLoaded && !_isDataLoaded) {
             // Populate form once when loaded
             final exam = state.exam;
@@ -176,14 +194,16 @@ class _EditExamFormState extends State<EditExamForm> {
           }
         },
         builder: (context, state) {
-          if (state is EditExamInitial || (state is EditExamLoading && !_isDataLoaded)) {
+          if (state is EditExamInitial ||
+              (state is EditExamLoading && !_isDataLoaded)) {
             return const LoadingWidget(message: 'Memuat detail ujian...');
           }
 
           if (state is EditExamError && !_isDataLoaded) {
             return AppErrorWidget(
               errorMessage: state.message,
-              onRetry: () => context.read<EditExamCubit>().loadExam(widget.examId),
+              onRetry: () =>
+                  context.read<EditExamCubit>().loadExam(widget.examId),
             );
           }
 
@@ -233,7 +253,9 @@ class _EditExamFormState extends State<EditExamForm> {
                       TextFormField(
                         controller: _durationController,
                         keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                         decoration: InputDecoration(
                           labelText: 'Durasi Ujian (Menit)',
                           hintText: 'Masukkan durasi dalam menit',
@@ -281,9 +303,13 @@ class _EditExamFormState extends State<EditExamForm> {
                                 child: Text(
                                   _startDate == null
                                       ? 'Pilih Waktu'
-                                      : DateFormat('dd MMM yyyy, HH:mm').format(_startDate!),
+                                      : DateFormat(
+                                          'dd MMM yyyy, HH:mm',
+                                        ).format(_startDate!),
                                   style: _startDate == null
-                                      ? theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor)
+                                      ? theme.textTheme.bodyMedium?.copyWith(
+                                          color: theme.hintColor,
+                                        )
                                       : theme.textTheme.bodyMedium,
                                 ),
                               ),
@@ -305,9 +331,13 @@ class _EditExamFormState extends State<EditExamForm> {
                                 child: Text(
                                   _endDate == null
                                       ? 'Pilih Waktu'
-                                      : DateFormat('dd MMM yyyy, HH:mm').format(_endDate!),
+                                      : DateFormat(
+                                          'dd MMM yyyy, HH:mm',
+                                        ).format(_endDate!),
                                   style: _endDate == null
-                                      ? theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor)
+                                      ? theme.textTheme.bodyMedium?.copyWith(
+                                          color: theme.hintColor,
+                                        )
                                       : theme.textTheme.bodyMedium,
                                 ),
                               ),
@@ -328,7 +358,9 @@ class _EditExamFormState extends State<EditExamForm> {
 
                       SwitchListTile(
                         title: const Text('Ujian Aktif'),
-                        subtitle: const Text('Siswa hanya dapat mengakses ujian jika status aktif'),
+                        subtitle: const Text(
+                          'Siswa hanya dapat mengakses ujian jika status aktif',
+                        ),
                         value: _isActive,
                         onChanged: (bool value) {
                           setState(() {
@@ -342,7 +374,9 @@ class _EditExamFormState extends State<EditExamForm> {
                       ),
                       SwitchListTile(
                         title: const Text('Acak Urutan Soal'),
-                        subtitle: const Text('Mengacak urutan soal secara unik untuk tiap siswa'),
+                        subtitle: const Text(
+                          'Mengacak urutan soal secara unik untuk tiap siswa',
+                        ),
                         value: _shuffleQuestions,
                         onChanged: (bool value) {
                           setState(() {
@@ -356,7 +390,9 @@ class _EditExamFormState extends State<EditExamForm> {
                       ),
                       SwitchListTile(
                         title: const Text('Acak Opsi Pilihan Ganda'),
-                        subtitle: const Text('Mengacak pilihan jawaban untuk soal pilihan ganda'),
+                        subtitle: const Text(
+                          'Mengacak pilihan jawaban untuk soal pilihan ganda',
+                        ),
                         value: _shuffleOptions,
                         onChanged: (bool value) {
                           setState(() {
@@ -379,7 +415,10 @@ class _EditExamFormState extends State<EditExamForm> {
                           icon: const Icon(Icons.save),
                           label: const Text(
                             'Simpan Perubahan',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           style: ElevatedButton.styleFrom(
                             shape: RoundedRectangleBorder(

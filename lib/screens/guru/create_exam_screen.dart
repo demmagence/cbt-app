@@ -7,7 +7,6 @@ import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/guru/create_exam_cubit.dart';
 import '../../services/firestore_service.dart';
-import '../../services/exam_code_service.dart';
 import '../../models/exam_model.dart';
 import '../../widgets/common/loading_widget.dart';
 
@@ -17,10 +16,8 @@ class CreateExamScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<CreateExamCubit>(
-      create: (context) => CreateExamCubit(
-        firestoreService: context.read<FirestoreService>(),
-        examCodeService: context.read<ExamCodeService>(),
-      ),
+      create: (context) =>
+          CreateExamCubit(firestoreService: context.read<FirestoreService>()),
       child: const CreateExamForm(),
     );
   }
@@ -69,13 +66,18 @@ class _CreateExamFormState extends State<CreateExamForm> {
 
   Future<void> _selectEndDate(BuildContext context) async {
     final now = DateTime.now();
-    final initialDate = _endDate ?? (_startDate ?? now).add(const Duration(hours: 2));
+    final initialDate =
+        _endDate ?? (_startDate ?? now).add(const Duration(hours: 2));
     final DateTime? picked = await _selectDateTime(context, initialDate);
     if (picked != null) {
-      if (!context.mounted) return;
+      if (!context.mounted) {
+        return;
+      }
       if (_startDate != null && picked.isBefore(_startDate!)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Waktu selesai harus setelah waktu mulai!')),
+          const SnackBar(
+            content: Text('Waktu selesai harus setelah waktu mulai!'),
+          ),
         );
         return;
       }
@@ -85,21 +87,30 @@ class _CreateExamFormState extends State<CreateExamForm> {
     }
   }
 
-  Future<DateTime?> _selectDateTime(BuildContext context, DateTime initialValue) async {
+  Future<DateTime?> _selectDateTime(
+    BuildContext context,
+    DateTime initialValue,
+  ) async {
     final date = await showDatePicker(
       context: context,
       initialDate: initialValue,
       firstDate: DateTime.now().subtract(const Duration(days: 1)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    if (date == null) return null;
+    if (date == null) {
+      return null;
+    }
 
-    if (!context.mounted) return null;
+    if (!context.mounted) {
+      return null;
+    }
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(initialValue),
     );
-    if (time == null) return null;
+    if (time == null) {
+      return null;
+    }
 
     return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
@@ -126,15 +137,15 @@ class _CreateExamFormState extends State<CreateExamForm> {
       }
 
       context.read<CreateExamCubit>().createExam(
-            title: _titleController.text.trim(),
-            description: _descriptionController.text.trim(),
-            duration: int.parse(_durationController.text.trim()),
-            startDate: _startDate!,
-            endDate: _endDate!,
-            shuffleQuestions: _shuffleQuestions,
-            shuffleOptions: _shuffleOptions,
-            guruId: guruId,
-          );
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        duration: int.parse(_durationController.text.trim()),
+        startDate: _startDate!,
+        endDate: _endDate!,
+        shuffleQuestions: _shuffleQuestions,
+        shuffleOptions: _shuffleOptions,
+        guruId: guruId,
+      );
     }
   }
 
@@ -145,10 +156,16 @@ class _CreateExamFormState extends State<CreateExamForm> {
       builder: (BuildContext dialogContext) {
         final theme = Theme.of(dialogContext);
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           title: Row(
             children: [
-              Icon(Icons.check_circle_outline, color: theme.colorScheme.primary, size: 28),
+              Icon(
+                Icons.check_circle_outline,
+                color: theme.colorScheme.primary,
+                size: 28,
+              ),
               const SizedBox(width: 12),
               const Text('Ujian Berhasil Dibuat'),
             ],
@@ -158,13 +175,16 @@ class _CreateExamFormState extends State<CreateExamForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Ujian "${exam.title}" telah berhasil dibuat. Silakan bagikan kode berikut kepada siswa Anda:',
+                'Ujian "${exam.title}" disimpan sebagai draf. Tambahkan soal, lalu aktifkan ujian di daftar ujian sebelum membagikan kode:',
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 20),
               Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(16),
@@ -182,11 +202,16 @@ class _CreateExamFormState extends State<CreateExamForm> {
                       ),
                       const SizedBox(width: 16),
                       IconButton(
-                        icon: Icon(Icons.copy, color: theme.colorScheme.onPrimaryContainer),
+                        icon: Icon(
+                          Icons.copy,
+                          color: theme.colorScheme.onPrimaryContainer,
+                        ),
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: exam.code));
                           ScaffoldMessenger.of(dialogContext).showSnackBar(
-                            const SnackBar(content: Text('Kode ujian disalin ke clipboard!')),
+                            const SnackBar(
+                              content: Text('Kode ujian disalin ke clipboard!'),
+                            ),
                           );
                         },
                         tooltip: 'Salin Kode',
@@ -208,7 +233,9 @@ class _CreateExamFormState extends State<CreateExamForm> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop(); // Tutup Dialog
-                context.go('/guru/exams/${exam.id}/questions'); // Kelola Pertanyaan
+                context.go(
+                  '/guru/exams/${exam.id}/questions',
+                ); // Kelola Pertanyaan
               },
               child: const Text('Kelola Soal'),
             ),
@@ -241,9 +268,9 @@ class _CreateExamFormState extends State<CreateExamForm> {
           if (state is CreateExamSuccess) {
             _showSuccessDialog(state.exam);
           } else if (state is CreateExamError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
           }
         },
         child: BlocBuilder<CreateExamCubit, CreateExamState>(
@@ -344,9 +371,13 @@ class _CreateExamFormState extends State<CreateExamForm> {
                               child: Text(
                                 _startDate == null
                                     ? 'Pilih Waktu'
-                                    : DateFormat('dd MMM yyyy, HH:mm').format(_startDate!),
+                                    : DateFormat(
+                                        'dd MMM yyyy, HH:mm',
+                                      ).format(_startDate!),
                                 style: _startDate == null
-                                    ? theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor)
+                                    ? theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.hintColor,
+                                      )
                                     : theme.textTheme.bodyMedium,
                               ),
                             ),
@@ -368,9 +399,13 @@ class _CreateExamFormState extends State<CreateExamForm> {
                               child: Text(
                                 _endDate == null
                                     ? 'Pilih Waktu'
-                                    : DateFormat('dd MMM yyyy, HH:mm').format(_endDate!),
+                                    : DateFormat(
+                                        'dd MMM yyyy, HH:mm',
+                                      ).format(_endDate!),
                                 style: _endDate == null
-                                    ? theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor)
+                                    ? theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.hintColor,
+                                      )
                                     : theme.textTheme.bodyMedium,
                               ),
                             ),
@@ -391,7 +426,9 @@ class _CreateExamFormState extends State<CreateExamForm> {
 
                     SwitchListTile(
                       title: const Text('Acak Urutan Soal'),
-                      subtitle: const Text('Mengacak urutan soal secara unik untuk tiap siswa'),
+                      subtitle: const Text(
+                        'Mengacak urutan soal secara unik untuk tiap siswa',
+                      ),
                       value: _shuffleQuestions,
                       onChanged: (bool value) {
                         setState(() {
@@ -405,7 +442,9 @@ class _CreateExamFormState extends State<CreateExamForm> {
                     ),
                     SwitchListTile(
                       title: const Text('Acak Opsi Pilihan Ganda'),
-                      subtitle: const Text('Mengacak pilihan jawaban untuk soal pilihan ganda'),
+                      subtitle: const Text(
+                        'Mengacak pilihan jawaban untuk soal pilihan ganda',
+                      ),
                       value: _shuffleOptions,
                       onChanged: (bool value) {
                         setState(() {
@@ -428,7 +467,10 @@ class _CreateExamFormState extends State<CreateExamForm> {
                         icon: const Icon(Icons.save),
                         label: const Text(
                           'Simpan & Buat Kode Ujian',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(

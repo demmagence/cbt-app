@@ -7,11 +7,7 @@ import '../../models/exam_result_model.dart';
 import '../../services/firestore_service.dart';
 
 // Activity Types for UI styling
-enum AdminActivityType {
-  newUser,
-  examCreated,
-  examSubmitted,
-}
+enum AdminActivityType { newUser, examCreated, examSubmitted }
 
 // Activity Item Model
 class AdminActivityItem extends Equatable {
@@ -68,13 +64,13 @@ class AdminDashboardLoaded extends AdminDashboardState {
 
   @override
   List<Object?> get props => [
-        totalUsers,
-        totalGuru,
-        totalSiswa,
-        totalUjian,
-        recentActivities,
-        examsPerMonth,
-      ];
+    totalUsers,
+    totalGuru,
+    totalSiswa,
+    totalUjian,
+    recentActivities,
+    examsPerMonth,
+  ];
 }
 
 class AdminDashboardError extends AdminDashboardState {
@@ -91,8 +87,8 @@ class AdminDashboardCubit extends Cubit<AdminDashboardState> {
   final FirestoreService _firestoreService;
 
   AdminDashboardCubit({required FirestoreService firestoreService})
-      : _firestoreService = firestoreService,
-        super(const AdminDashboardInitial());
+    : _firestoreService = firestoreService,
+      super(const AdminDashboardInitial());
 
   Future<void> loadDashboardData() async {
     emit(const AdminDashboardLoading());
@@ -118,9 +114,13 @@ class AdminDashboardCubit extends Cubit<AdminDashboardState> {
       final examResults = results[2] as List<ExamResultModel>;
 
       // 2. Compute counts
-      final totalUsers = users.length;
-      final totalGuru = users.where((u) => u.role == 'guru').length;
-      final totalSiswa = users.where((u) => u.role == 'siswa').length;
+      final totalUsers = users.where((u) => !u.deleted).length;
+      final totalGuru = users
+          .where((u) => !u.deleted && u.role == 'guru')
+          .length;
+      final totalSiswa = users
+          .where((u) => !u.deleted && u.role == 'siswa')
+          .length;
       final totalUjian = exams.length;
 
       // Create quick lookup maps for descriptions
@@ -201,14 +201,16 @@ class AdminDashboardCubit extends Cubit<AdminDashboardState> {
         }
       }
 
-      emit(AdminDashboardLoaded(
-        totalUsers: totalUsers,
-        totalGuru: totalGuru,
-        totalSiswa: totalSiswa,
-        totalUjian: totalUjian,
-        recentActivities: recentActivities,
-        examsPerMonth: examsPerMonth,
-      ));
+      emit(
+        AdminDashboardLoaded(
+          totalUsers: totalUsers,
+          totalGuru: totalGuru,
+          totalSiswa: totalSiswa,
+          totalUjian: totalUjian,
+          recentActivities: recentActivities,
+          examsPerMonth: examsPerMonth,
+        ),
+      );
     } catch (e) {
       emit(AdminDashboardError('Gagal memuat data dashboard: ${e.toString()}'));
     }

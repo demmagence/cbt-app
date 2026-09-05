@@ -28,6 +28,7 @@ class ExamSessionActive extends ExamSessionState {
   final Set<String> flaggedQuestions;
   final Set<String> visitedQuestions;
   final bool isOffline;
+  final String saveMessage;
 
   const ExamSessionActive({
     required this.exam,
@@ -38,6 +39,7 @@ class ExamSessionActive extends ExamSessionState {
     required this.flaggedQuestions,
     required this.visitedQuestions,
     this.isOffline = false,
+    this.saveMessage = 'Jawaban tersinkron',
   });
 
   ExamSessionActive copyWith({
@@ -49,6 +51,7 @@ class ExamSessionActive extends ExamSessionState {
     Set<String>? flaggedQuestions,
     Set<String>? visitedQuestions,
     bool? isOffline,
+    String? saveMessage,
   }) {
     return ExamSessionActive(
       exam: exam ?? this.exam,
@@ -59,28 +62,31 @@ class ExamSessionActive extends ExamSessionState {
       flaggedQuestions: flaggedQuestions ?? this.flaggedQuestions,
       visitedQuestions: visitedQuestions ?? this.visitedQuestions,
       isOffline: isOffline ?? this.isOffline,
+      saveMessage: saveMessage ?? this.saveMessage,
     );
   }
 
   @override
   List<Object?> get props => [
-        exam,
-        session,
-        questions,
-        currentIndex,
-        remainingTime,
-        flaggedQuestions,
-        visitedQuestions,
-        isOffline,
-      ];
+    exam,
+    session,
+    questions,
+    currentIndex,
+    remainingTime,
+    flaggedQuestions,
+    visitedQuestions,
+    isOffline,
+    saveMessage,
+  ];
 }
 
 class ExamSessionSubmitting extends ExamSessionState {
   final bool isOffline;
-  const ExamSessionSubmitting({this.isOffline = false});
+  final String? error;
+  const ExamSessionSubmitting({this.isOffline = false, this.error});
 
   @override
-  List<Object?> get props => [isOffline];
+  List<Object?> get props => [isOffline, error];
 }
 
 class ExamSessionCompleted extends ExamSessionState {

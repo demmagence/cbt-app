@@ -21,9 +21,9 @@ class AddQuestionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<AddQuestionCubit>(
-      create: (context) => AddQuestionCubit(
-        firestoreService: context.read<FirestoreService>(),
-      )..loadQuestions(examId),
+      create: (context) =>
+          AddQuestionCubit(firestoreService: context.read<FirestoreService>())
+            ..loadQuestions(examId),
       child: AddQuestionView(examId: examId),
     );
   }
@@ -42,7 +42,26 @@ class _AddQuestionViewState extends State<AddQuestionView> {
     await context.read<AddQuestionCubit>().loadQuestions(widget.examId);
   }
 
+  bool _canEdit() {
+    final state = context.read<AddQuestionCubit>().state;
+    if (state is! AddQuestionLoaded) {
+      return false;
+    }
+    if (state.exam.locked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Soal dikunci karena ujian sudah pernah dikerjakan.'),
+        ),
+      );
+      return false;
+    }
+    return true;
+  }
+
   void _openQuestionForm({QuestionModel? question, required int nextOrder}) {
+    if (!_canEdit()) {
+      return;
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -64,13 +83,18 @@ class _AddQuestionViewState extends State<AddQuestionView> {
   }
 
   void _confirmDelete(String questionId) {
+    if (!_canEdit()) {
+      return;
+    }
     showDialog(
       context: context,
       builder: (dialogContext) {
         final theme = Theme.of(dialogContext);
         return AlertDialog(
           title: const Text('Hapus Soal?'),
-          content: const Text('Apakah Anda yakin ingin menghapus soal ini? Jumlah soal ujian akan diperbarui secara otomatis.'),
+          content: const Text(
+            'Apakah Anda yakin ingin menghapus soal ini? Jumlah soal ujian akan diperbarui secara otomatis.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
@@ -83,7 +107,10 @@ class _AddQuestionViewState extends State<AddQuestionView> {
               ),
               onPressed: () {
                 Navigator.pop(dialogContext);
-                context.read<AddQuestionCubit>().deleteQuestion(widget.examId, questionId);
+                context.read<AddQuestionCubit>().deleteQuestion(
+                  widget.examId,
+                  questionId,
+                );
               },
               child: const Text('Hapus'),
             ),
@@ -94,6 +121,9 @@ class _AddQuestionViewState extends State<AddQuestionView> {
   }
 
   void _openImportDialog() async {
+    if (!_canEdit()) {
+      return;
+    }
     final authState = context.read<AuthBloc>().state;
     String guruId = '';
     if (authState is AuthAuthenticated) {
@@ -168,10 +198,17 @@ class _AddQuestionViewState extends State<AddQuestionView> {
                 // Helper drag indicator if list is not empty
                 if (questions.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: Row(
                       children: [
-                        Icon(Icons.info_outline, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'Tekan lama dan seret soal untuk mengurutkan kembali.',
@@ -187,7 +224,8 @@ class _AddQuestionViewState extends State<AddQuestionView> {
                   child: questions.isEmpty
                       ? const EmptyStateWidget(
                           title: 'Belum Ada Soal',
-                          description: 'Tambahkan soal pilihan ganda atau essay pertama Anda menggunakan tombol di bawah.',
+                          description:
+                              'Tambahkan soal pilihan ganda atau essay pertama Anda menggunakan tombol di bawah.',
                         )
                       : ReorderableListView.builder(
                           padding: const EdgeInsets.all(16.0),
@@ -202,14 +240,21 @@ class _AddQuestionViewState extends State<AddQuestionView> {
                             );
                           },
                           onReorderItem: (oldIndex, newIndex) {
-                             if (oldIndex == newIndex) return;
+                            if (oldIndex == newIndex) {
+                              return;
+                            }
 
-                             final reordered = List<QuestionModel>.from(questions);
-                             final item = reordered.removeAt(oldIndex);
-                             reordered.insert(newIndex, item);
+                            final reordered = List<QuestionModel>.from(
+                              questions,
+                            );
+                            final item = reordered.removeAt(oldIndex);
+                            reordered.insert(newIndex, item);
 
-                             context.read<AddQuestionCubit>().reorderQuestions(widget.examId, reordered);
-                           },
+                            context.read<AddQuestionCubit>().reorderQuestions(
+                              widget.examId,
+                              reordered,
+                            );
+                          },
                         ),
                 ),
               ],
@@ -223,7 +268,8 @@ class _AddQuestionViewState extends State<AddQuestionView> {
         builder: (context, state) {
           if (state is AddQuestionLoaded) {
             return FloatingActionButton.extended(
-              onPressed: () => _openQuestionForm(nextOrder: state.questions.length),
+              onPressed: () =>
+                  _openQuestionForm(nextOrder: state.questions.length),
               icon: const Icon(Icons.add),
               label: const Text('Tambah Soal'),
             );
@@ -266,14 +312,19 @@ class _AddQuestionViewState extends State<AddQuestionView> {
                 ),
               ),
               const SizedBox(width: 12),
-              Icon(Icons.schedule, size: 14, color: theme.colorScheme.onSurfaceVariant),
-              const SizedBox(width: 4),
-              Text(
-                '${exam.duration} mnt',
-                style: theme.textTheme.bodySmall,
+              Icon(
+                Icons.schedule,
+                size: 14,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
+              const SizedBox(width: 4),
+              Text('${exam.duration} mnt', style: theme.textTheme.bodySmall),
               const SizedBox(width: 12),
-              Icon(Icons.format_list_numbered, size: 14, color: theme.colorScheme.onSurfaceVariant),
+              Icon(
+                Icons.format_list_numbered,
+                size: 14,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: 4),
               Text(
                 '${exam.totalQuestions} soal terdaftar',
@@ -314,23 +365,29 @@ class _AddQuestionViewState extends State<AddQuestionView> {
                   foregroundColor: theme.colorScheme.onPrimary,
                   child: Text(
                     (index + 1).toString(),
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: question.isPg 
-                        ? theme.colorScheme.secondaryContainer 
+                    color: question.isPg
+                        ? theme.colorScheme.secondaryContainer
                         : theme.colorScheme.tertiaryContainer,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     question.isPg ? 'Pilihan Ganda' : 'Essay',
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: question.isPg 
-                          ? theme.colorScheme.onSecondaryContainer 
+                      color: question.isPg
+                          ? theme.colorScheme.onSecondaryContainer
                           : theme.colorScheme.onTertiaryContainer,
                       fontWeight: FontWeight.bold,
                     ),
@@ -344,12 +401,17 @@ class _AddQuestionViewState extends State<AddQuestionView> {
                     padding: const EdgeInsets.all(6),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  onPressed: () => _openQuestionForm(question: question, nextOrder: index),
+                  onPressed: () =>
+                      _openQuestionForm(question: question, nextOrder: index),
                   tooltip: 'Edit Soal',
                 ),
                 const SizedBox(width: 4),
                 IconButton(
-                  icon: Icon(Icons.delete_outline, size: 20, color: theme.colorScheme.error),
+                  icon: Icon(
+                    Icons.delete_outline,
+                    size: 20,
+                    color: theme.colorScheme.error,
+                  ),
                   style: IconButton.styleFrom(
                     minimumSize: Size.zero,
                     padding: const EdgeInsets.all(6),
@@ -363,7 +425,11 @@ class _AddQuestionViewState extends State<AddQuestionView> {
                   index: index,
                   child: Padding(
                     padding: const EdgeInsets.all(6.0),
-                    child: Icon(Icons.drag_handle, color: theme.colorScheme.onSurfaceVariant, size: 20),
+                    child: Icon(
+                      Icons.drag_handle,
+                      color: theme.colorScheme.onSurfaceVariant,
+                      size: 20,
+                    ),
                   ),
                 ),
               ],
@@ -387,23 +453,33 @@ class _AddQuestionViewState extends State<AddQuestionView> {
                 itemCount: question.options!.length,
                 itemBuilder: (context, optIndex) {
                   final isCorrect = question.correctAnswer == optIndex;
-                  final prefix = String.fromCharCode(65 + optIndex); // A, B, C, ...
+                  final prefix = String.fromCharCode(
+                    65 + optIndex,
+                  ); // A, B, C, ...
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
                       children: [
                         Icon(
-                          isCorrect ? Icons.check_circle : Icons.radio_button_unchecked,
+                          isCorrect
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
                           size: 16,
-                          color: isCorrect ? Colors.green : theme.colorScheme.onSurfaceVariant,
+                          color: isCorrect
+                              ? Colors.green
+                              : theme.colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             '$prefix. ${question.options![optIndex]}',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: isCorrect ? Colors.green.shade800 : theme.colorScheme.onSurface,
-                              fontWeight: isCorrect ? FontWeight.bold : FontWeight.normal,
+                              color: isCorrect
+                                  ? Colors.green.shade800
+                                  : theme.colorScheme.onSurface,
+                              fontWeight: isCorrect
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
                             ),
                           ),
                         ),
@@ -415,15 +491,20 @@ class _AddQuestionViewState extends State<AddQuestionView> {
               const SizedBox(height: 12),
               Text(
                 'Bobot Poin: ${question.points}',
-                style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ] else if (question.isEssay) ...[
-              if (question.essayGuideline != null && question.essayGuideline!.isNotEmpty) ...[
+              if (question.essayGuideline != null &&
+                  question.essayGuideline!.isNotEmpty) ...[
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
@@ -431,7 +512,9 @@ class _AddQuestionViewState extends State<AddQuestionView> {
                     children: [
                       Text(
                         'Pedoman Penilaian:',
-                        style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -445,7 +528,9 @@ class _AddQuestionViewState extends State<AddQuestionView> {
               ],
               Text(
                 'Skor Maksimal: ${question.maxScore}',
-                style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ],
@@ -492,9 +577,11 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
       _pointsController.text = q.points.toString();
       _maxScoreController.text = q.maxScore.toString();
       _guidelineController.text = q.essayGuideline ?? '';
-      
+
       if (q.isPg && q.options != null) {
-        _optionControllers = q.options!.map((opt) => TextEditingController(text: opt)).toList();
+        _optionControllers = q.options!
+            .map((opt) => TextEditingController(text: opt))
+            .toList();
         _correctAnswerIndex = q.correctAnswer;
       }
     } else {
@@ -536,7 +623,8 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
     }
     setState(() {
       _optionControllers.removeAt(index);
-      if (_correctAnswerIndex != null && _correctAnswerIndex! >= _optionControllers.length) {
+      if (_correctAnswerIndex != null &&
+          _correctAnswerIndex! >= _optionControllers.length) {
         _correctAnswerIndex = _optionControllers.length - 1;
       }
     });
@@ -560,15 +648,23 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
         for (int i = 0; i < options.length; i++) {
           if (options[i].isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Opsi ${String.fromCharCode(65 + i)} tidak boleh kosong!')),
+              SnackBar(
+                content: Text(
+                  'Opsi ${String.fromCharCode(65 + i)} tidak boleh kosong!',
+                ),
+              ),
             );
             return;
           }
         }
 
-        if (correctAnswer == null || correctAnswer < 0 || correctAnswer >= options.length) {
+        if (correctAnswer == null ||
+            correctAnswer < 0 ||
+            correctAnswer >= options.length) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Silakan pilih salah satu jawaban yang benar!')),
+            const SnackBar(
+              content: Text('Silakan pilih salah satu jawaban yang benar!'),
+            ),
           );
           return;
         }
@@ -623,7 +719,9 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
                 children: [
                   Text(
                     widget.question == null ? 'Tambah Soal Baru' : 'Edit Soal',
-                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -644,7 +742,9 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
                         label: const Text('Pilihan Ganda (PG)'),
                         selected: _type == 'pg',
                         onSelected: (selected) {
-                          if (selected) setState(() => _type = 'pg');
+                          if (selected) {
+                            setState(() => _type = 'pg');
+                          }
                         },
                       ),
                     ),
@@ -654,7 +754,9 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
                         label: const Text('Essay / Esai'),
                         selected: _type == 'essay',
                         onSelected: (selected) {
-                          if (selected) setState(() => _type = 'essay');
+                          if (selected) {
+                            setState(() => _type = 'essay');
+                          }
                         },
                       ),
                     ),
@@ -670,7 +772,9 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
                 decoration: InputDecoration(
                   labelText: 'Teks Pertanyaan',
                   hintText: 'Tuliskan detail pertanyaan di sini...',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -685,7 +789,9 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
               if (_type == 'pg') ...[
                 Text(
                   'Pilihan Jawaban (Pilih salah satu jawaban benar)',
-                  style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 RadioGroup<int>(
@@ -700,34 +806,39 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _optionControllers.length,
                     itemBuilder: (context, index) {
-                      final prefix = String.fromCharCode(65 + index); // A, B, C, ...
+                      final prefix = String.fromCharCode(
+                        65 + index,
+                      ); // A, B, C, ...
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Row(
                           children: [
-                            Radio<int>(
-                              value: index,
-                            ),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _optionControllers[index],
-                              decoration: InputDecoration(
-                                labelText: 'Opsi $prefix',
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            Radio<int>(value: index),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _optionControllers[index],
+                                decoration: InputDecoration(
+                                  labelText: 'Opsi $prefix',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
-                            onPressed: () => _removeOption(index),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                            IconButton(
+                              icon: const Icon(
+                                Icons.remove_circle_outline,
+                                color: Colors.red,
+                              ),
+                              onPressed: () => _removeOption(index),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
+                const SizedBox(height: 4),
                 TextButton.icon(
                   onPressed: _addOption,
                   icon: const Icon(Icons.add),
@@ -742,13 +853,19 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
                     labelText: 'Bobot Poin Soal',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     prefixIcon: const Icon(Icons.score),
                   ),
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) return 'Bobot poin wajib diisi';
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Bobot poin wajib diisi';
+                    }
                     final points = int.tryParse(value);
-                    if (points == null || points <= 0) return 'Bobot poin harus > 0';
+                    if (points == null || points <= 0) {
+                      return 'Bobot poin harus > 0';
+                    }
                     return null;
                   },
                 ),
@@ -760,13 +877,19 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
                     labelText: 'Skor Maksimal Soal',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     prefixIcon: const Icon(Icons.star_outline),
                   ),
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) return 'Skor maksimal wajib diisi';
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Skor maksimal wajib diisi';
+                    }
                     final score = int.tryParse(value);
-                    if (score == null || score <= 0) return 'Skor maksimal harus > 0';
+                    if (score == null || score <= 0) {
+                      return 'Skor maksimal harus > 0';
+                    }
                     return null;
                   },
                 ),
@@ -779,7 +902,9 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
                   decoration: InputDecoration(
                     labelText: 'Pedoman Penilaian / Kunci Jawaban (Opsional)',
                     hintText: 'Panduan penskoran jawaban siswa untuk guru...',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ],
@@ -791,7 +916,9 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
                   Expanded(
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         minimumSize: const Size(0, 48),
                       ),
                       onPressed: () => Navigator.pop(context),
@@ -802,7 +929,9 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         minimumSize: const Size(0, 48),
                       ),
                       onPressed: _save,
@@ -837,9 +966,9 @@ class _ImportQuestionsDialogState extends State<ImportQuestionsDialog> {
     final mediaQuery = MediaQuery.of(context);
 
     return BlocProvider<QuestionBankCubit>(
-      create: (context) => QuestionBankCubit(
-        firestoreService: context.read<FirestoreService>(),
-      )..loadQuestions(widget.guruId),
+      create: (context) =>
+          QuestionBankCubit(firestoreService: context.read<FirestoreService>())
+            ..loadQuestions(widget.guruId),
       child: Container(
         height: mediaQuery.size.height * 0.8,
         padding: const EdgeInsets.all(16.0),
@@ -851,7 +980,9 @@ class _ImportQuestionsDialogState extends State<ImportQuestionsDialog> {
               children: [
                 Text(
                   'Import dari Bank Soal',
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -864,7 +995,9 @@ class _ImportQuestionsDialogState extends State<ImportQuestionsDialog> {
               decoration: InputDecoration(
                 labelText: 'Cari Soal',
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onChanged: (val) {
                 setState(() {
@@ -876,19 +1009,26 @@ class _ImportQuestionsDialogState extends State<ImportQuestionsDialog> {
             Expanded(
               child: BlocBuilder<QuestionBankCubit, QuestionBankState>(
                 builder: (context, state) {
-                  if (state is QuestionBankInitial || state is QuestionBankLoading) {
+                  if (state is QuestionBankInitial ||
+                      state is QuestionBankLoading) {
                     return const LoadingWidget(message: 'Memuat bank soal...');
                   }
                   if (state is QuestionBankError) {
                     return AppErrorWidget(
                       errorMessage: state.message,
-                      onRetry: () => context.read<QuestionBankCubit>().loadQuestions(widget.guruId),
+                      onRetry: () => context
+                          .read<QuestionBankCubit>()
+                          .loadQuestions(widget.guruId),
                     );
                   }
                   if (state is QuestionBankLoaded) {
                     var list = state.questions;
                     if (_searchQuery.isNotEmpty) {
-                      list = list.where((q) => q.text.toLowerCase().contains(_searchQuery)).toList();
+                      list = list
+                          .where(
+                            (q) => q.text.toLowerCase().contains(_searchQuery),
+                          )
+                          .toList();
                     }
 
                     if (list.isEmpty) {
@@ -902,18 +1042,22 @@ class _ImportQuestionsDialogState extends State<ImportQuestionsDialog> {
                       itemCount: list.length,
                       itemBuilder: (context, index) {
                         final question = list[index];
-                        final isSelected = _selectedQuestions.any((q) => q.id == question.id);
+                        final isSelected = _selectedQuestions.any(
+                          (q) => q.id == question.id,
+                        );
 
                         return CheckboxListTile(
                           title: Text(
                             question.text,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           subtitle: Text(
-                            question.isPg 
-                                ? 'Pilihan Ganda • Bobot: ${question.points}' 
+                            question.isPg
+                                ? 'Pilihan Ganda • Bobot: ${question.points}'
                                 : 'Essay • Skor Maks: ${question.maxScore}',
                             style: theme.textTheme.bodySmall,
                           ),
@@ -923,7 +1067,9 @@ class _ImportQuestionsDialogState extends State<ImportQuestionsDialog> {
                               if (val == true) {
                                 _selectedQuestions.add(question);
                               } else {
-                                _selectedQuestions.removeWhere((q) => q.id == question.id);
+                                _selectedQuestions.removeWhere(
+                                  (q) => q.id == question.id,
+                                );
                               }
                             });
                           },

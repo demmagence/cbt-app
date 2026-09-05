@@ -45,8 +45,8 @@ class AddQuestionCubit extends Cubit<AddQuestionState> {
   final FirestoreService _firestoreService;
 
   AddQuestionCubit({required FirestoreService firestoreService})
-      : _firestoreService = firestoreService,
-        super(const AddQuestionInitial());
+    : _firestoreService = firestoreService,
+      super(const AddQuestionInitial());
 
   Future<void> loadQuestions(String examId) async {
     emit(const AddQuestionLoading());
@@ -79,158 +79,54 @@ class AddQuestionCubit extends Cubit<AddQuestionState> {
     }
   }
 
-  Future<void> addQuestion(String examId, QuestionModel question) async {
+  Future<void> _change(String examId, Map<String, dynamic> data) async {
+    if (state is AddQuestionLoading) {
+      return;
+    }
+    if (state is AddQuestionLoaded &&
+        (state as AddQuestionLoaded).exam.locked) {
+      emit(
+        const AddQuestionError(
+          'Soal dikunci karena ujian sudah pernah dikerjakan.',
+        ),
+      );
+      return;
+    }
+    emit(const AddQuestionLoading());
     try {
-      final state = this.state;
-      if (state is! AddQuestionLoaded) return;
-
-      emit(const AddQuestionLoading());
-
-      final qPath = _firestoreService.questionsPath(examId);
-      
-      // Save question
-      await _firestoreService.addDocument(
-        path: qPath,
-        docId: question.id,
-        data: question.toJson(),
-      );
-
-      // Update total questions count in Exam
-      final newTotal = state.exam.totalQuestions + 1;
-      await _firestoreService.updateDocument(
-        path: FirestoreService.examsPath,
-        docId: examId,
-        data: {'totalQuestions': newTotal},
-      );
-
-      // Reload
+      await _firestoreService.call('editQuestions', {
+        'examId': examId,
+        ...data,
+      });
       await loadQuestions(examId);
     } catch (e) {
-      emit(AddQuestionError('Gagal menambah soal: ${e.toString()}'));
+      emit(AddQuestionError('Gagal menyimpan soal: $e'));
     }
   }
 
-  Future<void> updateQuestion(String examId, QuestionModel question) async {
-    try {
-      final state = this.state;
-      if (state is! AddQuestionLoaded) return;
+  Future<void> addQuestion(String examId, QuestionModel question) =>
+      _change(examId, {
+        'action': 'add',
+        'questions': [question.toJson()],
+      });
 
-      emit(const AddQuestionLoading());
+  Future<void> updateQuestion(String examId, QuestionModel question) =>
+      _change(examId, {'action': 'update', 'question': question.toJson()});
 
-      final qPath = _firestoreService.questionsPath(examId);
-      
-      // Update question
-      await _firestoreService.updateDocument(
-        path: qPath,
-        docId: question.id,
-        data: question.toJson(),
-      );
+  Future<void> deleteQuestion(String examId, String questionId) =>
+      _change(examId, {'action': 'delete', 'questionId': questionId});
 
-      // Reload
-      await loadQuestions(examId);
-    } catch (e) {
-      emit(AddQuestionError('Gagal memperbarui soal: ${e.toString()}'));
-    }
-  }
+  Future<void> reorderQuestions(String examId, List<QuestionModel> questions) =>
+      _change(examId, {
+        'action': 'reorder',
+        'ids': questions.map((q) => q.id).toList(),
+      });
 
-  Future<void> deleteQuestion(String examId, String questionId) async {
-    try {
-      final state = this.state;
-      if (state is! AddQuestionLoaded) return;
-
-      emit(const AddQuestionLoading());
-
-      final qPath = _firestoreService.questionsPath(examId);
-
-      // Delete question
-      await _firestoreService.deleteDocument(
-        path: qPath,
-        docId: questionId,
-      );
-
-      // Update total questions count in Exam
-      final newTotal = state.exam.totalQuestions - 1 >= 0 ? state.exam.totalQuestions - 1 : 0;
-      await _firestoreService.updateDocument(
-        path: FirestoreService.examsPath,
-        docId: examId,
-        data: {'totalQuestions': newTotal},
-      );
-
-      // Adjust remaining questions' order
-      final remaining = state.questions.where((q) => q.id != questionId).toList();
-      for (int i = 0; i < remaining.length; i++) {
-        final q = remaining[i];
-        if (q.order != i) {
-          await _firestoreService.updateDocument(
-            path: qPath,
-            docId: q.id,
-            data: {'order': i},
-          );
-        }
-      }
-
-      // Reload
-      await loadQuestions(examId);
-    } catch (e) {
-      emit(AddQuestionError('Gagal menghapus soal: ${e.toString()}'));
-    }
-  }
-
-  Future<void> reorderQuestions(String examId, List<QuestionModel> reorderedList) async {
-    try {
-      emit(const AddQuestionLoading());
-
-      final qPath = _firestoreService.questionsPath(examId);
-
-      // Update order in Firestore for each question
-      for (int i = 0; i < reorderedList.length; i++) {
-        final q = reorderedList[i];
-        await _firestoreService.updateDocument(
-          path: qPath,
-          docId: q.id,
-          data: {'order': i},
-        );
-      }
-
-      // Reload
-      await loadQuestions(examId);
-    } catch (e) {
-      emit(AddQuestionError('Gagal mengurutkan soal: ${e.toString()}'));
-    }
-  }
-
-  Future<void> importQuestions(String examId, List<QuestionModel> selectedQuestions) async {
-    try {
-      final state = this.state;
-      if (state is! AddQuestionLoaded) return;
-
-      emit(const AddQuestionLoading());
-
-      final qPath = _firestoreService.questionsPath(examId);
-      int currentOrder = state.questions.length;
-
-      for (final q in selectedQuestions) {
-        final newQuestion = q.copyWith(
-          id: const Uuid().v4(),
-          order: currentOrder++,
-        );
-        await _firestoreService.addDocument(
-          path: qPath,
-          docId: newQuestion.id,
-          data: newQuestion.toJson(),
-        );
-      }
-
-      final newTotal = state.exam.totalQuestions + selectedQuestions.length;
-      await _firestoreService.updateDocument(
-        path: FirestoreService.examsPath,
-        docId: examId,
-        data: {'totalQuestions': newTotal},
-      );
-
-      await loadQuestions(examId);
-    } catch (e) {
-      emit(AddQuestionError('Gagal mengimpor soal: ${e.toString()}'));
-    }
-  }
+  Future<void> importQuestions(String examId, List<QuestionModel> questions) =>
+      _change(examId, {
+        'action': 'add',
+        'questions': questions
+            .map((q) => q.copyWith(id: const Uuid().v4()).toJson())
+            .toList(),
+      });
 }

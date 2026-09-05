@@ -1,4 +1,18 @@
 {
-  "indexes": [],
+  "indexes": [
+    { "collectionGroup": "users", "queryScope": "COLLECTION", "density": "DENSE", "fields": [{ "fieldPath": "role", "order": "ASCENDING" }] },
+    { "collectionGroup": "exams", "queryScope": "COLLECTION", "density": "DENSE", "fields": [{ "fieldPath": "code", "order": "ASCENDING" }] },
+    { "collectionGroup": "exams", "queryScope": "COLLECTION", "density": "DENSE", "fields": [{ "fieldPath": "createdBy", "order": "ASCENDING" }] },
+    { "collectionGroup": "exams", "queryScope": "COLLECTION", "density": "DENSE", "fields": [{ "fieldPath": "isActive", "order": "ASCENDING" }] },
+    { "collectionGroup": "exam_sessions", "queryScope": "COLLECTION", "density": "DENSE", "fields": [{ "fieldPath": "examId", "order": "ASCENDING" }] },
+    { "collectionGroup": "exam_sessions", "queryScope": "COLLECTION", "density": "DENSE", "fields": [{ "fieldPath": "userId", "order": "ASCENDING" }] },
+    { "collectionGroup": "exam_sessions", "queryScope": "COLLECTION", "density": "DENSE", "fields": [{ "fieldPath": "userId", "order": "ASCENDING" }, { "fieldPath": "examId", "order": "ASCENDING" }] },
+    { "collectionGroup": "exam_sessions", "queryScope": "COLLECTION", "density": "DENSE", "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "expiresAt", "order": "ASCENDING" }] },
+    { "collectionGroup": "exam_results", "queryScope": "COLLECTION", "density": "DENSE", "fields": [{ "fieldPath": "userId", "order": "ASCENDING" }] },
+    { "collectionGroup": "exam_results", "queryScope": "COLLECTION", "density": "DENSE", "fields": [{ "fieldPath": "examId", "order": "ASCENDING" }] },
+    { "collectionGroup": "exam_results", "queryScope": "COLLECTION", "density": "DENSE", "fields": [{ "fieldPath": "examId", "order": "ASCENDING" }, { "fieldPath": "userId", "order": "ASCENDING" }] },
+    { "collectionGroup": "exam_results", "queryScope": "COLLECTION", "density": "DENSE", "fields": [{ "fieldPath": "gradingStatus", "order": "ASCENDING" }, { "fieldPath": "examId", "order": "ASCENDING" }] },
+    { "collectionGroup": "question_bank", "queryScope": "COLLECTION", "density": "DENSE", "fields": [{ "fieldPath": "createdBy", "order": "ASCENDING" }] }
+  ],
   "fieldOverrides": []
 }

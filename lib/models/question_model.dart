@@ -55,8 +55,8 @@ class QuestionModel extends Equatable {
       id: id ?? json['id'] as String? ?? '',
       type: json['type'] as String? ?? 'pg',
       text: json['text'] as String? ?? '',
-      options: json['options'] != null 
-          ? List<String>.from(json['options'] as List) 
+      options: json['options'] != null
+          ? List<String>.from(json['options'] as List)
           : null,
       correctAnswer: json['correctAnswer'] as int?,
       essayGuideline: json['essayGuideline'] as String?,
@@ -71,9 +71,9 @@ class QuestionModel extends Equatable {
       'id': id,
       'type': type,
       'text': text,
-      if (options != null) 'options': options,
-      if (correctAnswer != null) 'correctAnswer': correctAnswer,
-      if (essayGuideline != null) 'essayGuideline': essayGuideline,
+      if (isPg && options != null) 'options': options,
+      if (isPg && correctAnswer != null) 'correctAnswer': correctAnswer,
+      if (isEssay && essayGuideline != null) 'essayGuideline': essayGuideline,
       'maxScore': maxScore,
       'order': order,
       'points': points,
@@ -82,14 +82,14 @@ class QuestionModel extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        type,
-        text,
-        options,
-        correctAnswer,
-        essayGuideline,
-        maxScore,
-        order,
-        points,
-      ];
+    id,
+    type,
+    text,
+    options,
+    correctAnswer,
+    essayGuideline,
+    maxScore,
+    order,
+    points,
+  ];
 }

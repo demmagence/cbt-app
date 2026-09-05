@@ -60,8 +60,8 @@ class EssayGradingDetailCubit extends Cubit<EssayGradingDetailState> {
   final FirestoreService _firestoreService;
 
   EssayGradingDetailCubit({required FirestoreService firestoreService})
-      : _firestoreService = firestoreService,
-        super(const EssayGradingDetailInitial());
+    : _firestoreService = firestoreService,
+      super(const EssayGradingDetailInitial());
 
   Future<void> loadDetail(String examId, String userId) async {
     emit(const EssayGradingDetailLoading());
@@ -100,7 +100,9 @@ class EssayGradingDetailCubit extends Cubit<EssayGradingDetailState> {
       );
 
       if (results.isEmpty) {
-        emit(const EssayGradingDetailError('Hasil ujian siswa belum terdaftar'));
+        emit(
+          const EssayGradingDetailError('Hasil ujian siswa belum terdaftar'),
+        );
         return;
       }
       final result = results.first;
@@ -117,25 +119,41 @@ class EssayGradingDetailCubit extends Cubit<EssayGradingDetailState> {
         return;
       }
 
-      // 5. Fetch Exam Questions and filter only essays
-      final qPath = _firestoreService.questionsPath(examId);
-      final questions = await _firestoreService.getCollection<QuestionModel>(
-        path: qPath,
-        fromJson: (json, id) => QuestionModel.fromJson(json, id: id),
+      // Grade the same immutable snapshot used by the server.
+      final content = await _firestoreService.getDocument<Map<String, dynamic>>(
+        path: 'session_content',
+        docId: result.sessionId,
+        fromJson: (json, id) => json,
       );
+      if (content == null) {
+        throw StateError(
+          'Snapshot sesi belum tersedia. Migrasikan sesi lama terlebih dahulu.',
+        );
+      }
+      final questions = (content['questions'] as List)
+          .map(
+            (q) => QuestionModel.fromJson(Map<String, dynamic>.from(q as Map)),
+          )
+          .toList();
 
       final essayQuestions = questions.where((q) => q.isEssay).toList();
       essayQuestions.sort((a, b) => a.order.compareTo(b.order));
 
-      emit(EssayGradingDetailLoaded(
-        exam: exam,
-        result: result,
-        session: session,
-        essayQuestions: essayQuestions,
-        student: student,
-      ));
+      emit(
+        EssayGradingDetailLoaded(
+          exam: exam,
+          result: result,
+          session: session,
+          essayQuestions: essayQuestions,
+          student: student,
+        ),
+      );
     } catch (e) {
-      emit(EssayGradingDetailError('Gagal memuat detail pengerjaan: ${e.toString()}'));
+      emit(
+        EssayGradingDetailError(
+          'Gagal memuat detail pengerjaan: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -145,40 +163,23 @@ class EssayGradingDetailCubit extends Cubit<EssayGradingDetailState> {
     required Map<String, EssayGrade> grades,
     required String guruId,
   }) async {
+    final previous = state;
     try {
       emit(const EssayGradingDetailLoading());
 
-      // Calculate essay total score
-      num essayScore = 0;
-      grades.forEach((key, val) {
-        essayScore += val.score;
+      await _firestoreService.call('submitGrades', {
+        'resultId': resultId,
+        'grades': grades.map((key, value) => MapEntry(key, value.toJson())),
       });
-
-      // Calculate total final score
-      final totalScore = pgScore + essayScore;
-
-      // Prepare updated grades JSON structure
-      final serializedGrades = grades.map((key, val) => MapEntry(key, val.toJson()));
-
-      // Update in Firestore
-      final updateData = {
-        'essayScore': essayScore,
-        'totalScore': totalScore,
-        'essayGrades': serializedGrades,
-        'gradingStatus': 'graded',
-        'gradedAt': DateTime.now().toIso8601String(),
-        'gradedBy': guruId,
-      };
-
-      await _firestoreService.updateDocument(
-        path: FirestoreService.examResultsPath,
-        docId: resultId,
-        data: updateData,
-      );
 
       emit(const EssayGradingDetailSuccess());
     } catch (e) {
-      emit(EssayGradingDetailError('Gagal menyimpan penilaian: ${e.toString()}'));
+      emit(
+        EssayGradingDetailError('Gagal menyimpan penilaian: ${e.toString()}'),
+      );
+      if (previous is EssayGradingDetailLoaded) {
+        emit(previous);
+      }
     }
   }
 }

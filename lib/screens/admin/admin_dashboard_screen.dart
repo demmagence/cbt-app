@@ -37,7 +37,8 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
 
     return Scaffold(
       body: RefreshIndicator(
-        onRefresh: () => context.read<AdminDashboardCubit>().loadDashboardData(),
+        onRefresh: () =>
+            context.read<AdminDashboardCubit>().loadDashboardData(),
         child: BlocBuilder<AdminDashboardCubit, AdminDashboardState>(
           builder: (context, state) {
             if (state is AdminDashboardLoading) {
@@ -47,7 +48,8 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             if (state is AdminDashboardError) {
               return AppErrorWidget(
                 errorMessage: state.message,
-                onRetry: () => context.read<AdminDashboardCubit>().loadDashboardData(),
+                onRetry: () =>
+                    context.read<AdminDashboardCubit>().loadDashboardData(),
               );
             }
 
@@ -112,15 +114,15 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
   }
 
   Widget _buildStatsGrid(BuildContext context, AdminDashboardLoaded state) {
-    final isDesktop = MediaQuery.of(context).size.width > 600;
+    final isWideScreen = MediaQuery.of(context).size.width > 600;
 
     return GridView.count(
-      crossAxisCount: isDesktop ? 4 : 2,
+      crossAxisCount: isWideScreen ? 4 : 2,
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: isDesktop ? 1.5 : 1.3,
+      childAspectRatio: isWideScreen ? 1.5 : 1.3,
       children: [
         _buildStatCard(
           title: 'Total User',
@@ -164,9 +166,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     return Card(
       color: color,
       elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -245,7 +245,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                   subtitle: 'Kelola data user',
                   icon: Icons.manage_accounts_rounded,
                   color: theme.colorScheme.secondary,
-                  onTap: () => context.go('/admin/users'),
+                  onTap: () => context.push('/admin/users'),
                 ),
               ),
             ],
@@ -275,7 +275,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
         color: theme.colorScheme.surface,
       ),
       child: InkWell(
@@ -381,7 +383,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                   ? Center(
                       child: Text(
                         'Tidak ada data aktivitas',
-                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     )
                   : BarChart(
@@ -391,9 +395,16 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                         barTouchData: BarTouchData(
                           enabled: true,
                           touchTooltipData: BarTouchTooltipData(
-                            getTooltipColor: (group) => theme.colorScheme.primaryContainer,
-                            tooltipBorder: BorderSide(color: theme.colorScheme.primary, width: 1),
-                            tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            getTooltipColor: (group) =>
+                                theme.colorScheme.primaryContainer,
+                            tooltipBorder: BorderSide(
+                              color: theme.colorScheme.primary,
+                              width: 1,
+                            ),
+                            tooltipPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                             getTooltipItem: (group, groupIndex, rod, rodIndex) {
                               return BarTooltipItem(
                                 '${rod.toY.toInt()} Ujian',
@@ -420,7 +431,8 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                                     child: Text(
                                       parts[0], // Only display the month abbreviation (e.g. "Jun")
                                       style: TextStyle(
-                                        color: theme.colorScheme.onSurfaceVariant,
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -436,7 +448,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                             sideTitles: SideTitles(
                               showTitles: true,
                               getTitlesWidget: (value, meta) {
-                                if (value % 1 != 0) return const SizedBox.shrink(); // Integers only
+                                if (value % 1 != 0) {
+                                  return const SizedBox.shrink(); // Integers only
+                                }
                                 return Text(
                                   value.toInt().toString(),
                                   style: TextStyle(
@@ -448,8 +462,12 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                               reservedSize: 28,
                             ),
                           ),
-                          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
                         ),
                         gridData: FlGridData(
                           show: true,
@@ -492,7 +510,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                     child: Center(
                       child: Text(
                         'Belum ada aktivitas terekam.',
-                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
                   )
@@ -500,7 +520,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                     padding: EdgeInsets.zero,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: state.recentActivities.length > 8 ? 8 : state.recentActivities.length,
+                    itemCount: state.recentActivities.length > 8
+                        ? 8
+                        : state.recentActivities.length,
                     separatorBuilder: (context, index) => Divider(
                       height: 16,
                       color: theme.colorScheme.outline.withValues(alpha: 0.1),
@@ -512,7 +534,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                         children: [
                           CircleAvatar(
                             radius: 18,
-                            backgroundColor: _getActivityColor(item.type, theme).withValues(alpha: 0.1),
+                            backgroundColor: _getActivityColor(
+                              item.type,
+                              theme,
+                            ).withValues(alpha: 0.1),
                             child: Icon(
                               _getActivityIcon(item.type),
                               color: _getActivityColor(item.type, theme),
@@ -543,7 +568,8 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                                 Text(
                                   _formatTimeAgo(item.timestamp),
                                   style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                                    color: theme.colorScheme.onSurfaceVariant
+                                        .withValues(alpha: 0.7),
                                     fontSize: 10,
                                   ),
                                 ),

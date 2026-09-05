@@ -68,7 +68,8 @@ class _UserManagementViewState extends State<UserManagementView> {
             return const LoadingWidget(message: 'Memuat daftar pengguna...');
           }
 
-          if (state is UserManagementError && state.message.contains('Gagal memuat')) {
+          if (state is UserManagementError &&
+              state.message.contains('Gagal memuat')) {
             return AppErrorWidget(
               errorMessage: state.message,
               onRetry: () => context.read<UserManagementCubit>().loadUsers(),
@@ -87,7 +88,9 @@ class _UserManagementViewState extends State<UserManagementView> {
                       TextField(
                         controller: _searchController,
                         onChanged: (value) {
-                          context.read<UserManagementCubit>().updateFilters(search: value);
+                          context.read<UserManagementCubit>().updateFilters(
+                            search: value,
+                          );
                         },
                         decoration: InputDecoration(
                           hintText: 'Cari nama atau email...',
@@ -97,7 +100,9 @@ class _UserManagementViewState extends State<UserManagementView> {
                                   icon: const Icon(Icons.clear),
                                   onPressed: () {
                                     _searchController.clear();
-                                    context.read<UserManagementCubit>().updateFilters(search: '');
+                                    context
+                                        .read<UserManagementCubit>()
+                                        .updateFilters(search: '');
                                     setState(() {});
                                   },
                                 )
@@ -146,11 +151,13 @@ class _UserManagementViewState extends State<UserManagementView> {
                   child: state.filteredUsers.isEmpty
                       ? const EmptyStateWidget(
                           title: 'Pengguna Tidak Ditemukan',
-                          description: 'Tidak ada pengguna yang cocok dengan kriteria pencarian.',
+                          description:
+                              'Tidak ada pengguna yang cocok dengan kriteria pencarian.',
                           icon: Icons.person_off_rounded,
                         )
                       : RefreshIndicator(
-                          onRefresh: () => context.read<UserManagementCubit>().loadUsers(),
+                          onRefresh: () =>
+                              context.read<UserManagementCubit>().loadUsers(),
                           child: ListView.builder(
                             padding: const EdgeInsets.all(16),
                             itemCount: state.filteredUsers.length,
@@ -189,7 +196,9 @@ class _UserManagementViewState extends State<UserManagementView> {
       selectedColor: theme.colorScheme.primaryContainer,
       checkmarkColor: theme.colorScheme.onPrimaryContainer,
       labelStyle: TextStyle(
-        color: isSelected ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurfaceVariant,
+        color: isSelected
+            ? theme.colorScheme.onPrimaryContainer
+            : theme.colorScheme.onSurfaceVariant,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
     );
@@ -202,7 +211,7 @@ class _UserManagementViewState extends State<UserManagementView> {
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () {
-          context.go('/admin/users/${user.uid}/edit', extra: user);
+          context.push('/admin/users/${user.uid}/edit', extra: user);
         },
         onLongPress: () => _showActionMenu(context, user, theme),
         child: Padding(
@@ -212,7 +221,10 @@ class _UserManagementViewState extends State<UserManagementView> {
               // User Avatar
               CircleAvatar(
                 radius: 24,
-                backgroundColor: _getRoleColor(user.role, theme).withValues(alpha: 0.1),
+                backgroundColor: _getRoleColor(
+                  user.role,
+                  theme,
+                ).withValues(alpha: 0.1),
                 child: Text(
                   user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
                   style: TextStyle(
@@ -244,7 +256,10 @@ class _UserManagementViewState extends State<UserManagementView> {
                         const SizedBox(width: 8),
                         _buildBadge(
                           text: user.role.toUpperCase(),
-                          color: _getRoleColor(user.role, theme).withValues(alpha: 0.15),
+                          color: _getRoleColor(
+                            user.role,
+                            theme,
+                          ).withValues(alpha: 0.15),
                           textColor: _getRoleColor(user.role, theme),
                         ),
                       ],
@@ -265,7 +280,8 @@ class _UserManagementViewState extends State<UserManagementView> {
                         Text(
                           'Terdaftar: $formattedDate',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.7),
                             fontSize: 11,
                           ),
                         ),
@@ -343,7 +359,10 @@ class _UserManagementViewState extends State<UserManagementView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                    vertical: 8.0,
+                  ),
                   child: Text(
                     user.name,
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -356,13 +375,21 @@ class _UserManagementViewState extends State<UserManagementView> {
                 const Divider(),
                 ListTile(
                   leading: Icon(
-                    user.isActive ? Icons.block_rounded : Icons.check_circle_outline_rounded,
-                    color: user.isActive ? theme.colorScheme.error : AppColors.success,
+                    user.isActive
+                        ? Icons.block_rounded
+                        : Icons.check_circle_outline_rounded,
+                    color: user.isActive
+                        ? theme.colorScheme.error
+                        : AppColors.success,
                   ),
                   title: Text(
-                    user.isActive ? 'Nonaktifkan Pengguna' : 'Aktifkan Pengguna',
+                    user.isActive
+                        ? 'Nonaktifkan Pengguna'
+                        : 'Aktifkan Pengguna',
                     style: TextStyle(
-                      color: user.isActive ? theme.colorScheme.error : AppColors.success,
+                      color: user.isActive
+                          ? theme.colorScheme.error
+                          : AppColors.success,
                     ),
                   ),
                   onTap: () {
@@ -375,11 +402,14 @@ class _UserManagementViewState extends State<UserManagementView> {
                   title: const Text('Edit Data Pengguna'),
                   onTap: () {
                     Navigator.pop(context);
-                    context.go('/admin/users/${user.uid}/edit', extra: user);
+                    context.push('/admin/users/${user.uid}/edit', extra: user);
                   },
                 ),
                 ListTile(
-                  leading: Icon(Icons.delete_forever_rounded, color: theme.colorScheme.error),
+                  leading: Icon(
+                    Icons.delete_forever_rounded,
+                    color: theme.colorScheme.error,
+                  ),
                   title: Text(
                     'Hapus Pengguna',
                     style: TextStyle(color: theme.colorScheme.error),
@@ -412,23 +442,33 @@ class _UserManagementViewState extends State<UserManagementView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Apakah Anda yakin ingin menghapus akun "${user.name}" dari basis data?'),
+              Text(
+                'Apakah Anda yakin ingin menghapus akun "${user.name}" dari basis data?',
+              ),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.errorContainer.withValues(alpha: 0.2),
+                  color: theme.colorScheme.errorContainer.withValues(
+                    alpha: 0.2,
+                  ),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: theme.colorScheme.error.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: theme.colorScheme.error.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.warning_amber_rounded, color: theme.colorScheme.error, size: 20),
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: theme.colorScheme.error,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'PENTING: Aksi ini hanya menghapus dokumen di Firestore. Anda harus menghapus akun Authentication dari Firebase Console secara manual jika ingin menghapus akses loginnya sepenuhnya.',
+                        'Akun login akan dihapus permanen. Profil nonaktif dan riwayat ujian tetap disimpan untuk laporan.',
                         style: TextStyle(
                           fontSize: 11,
                           color: theme.colorScheme.onErrorContainer,

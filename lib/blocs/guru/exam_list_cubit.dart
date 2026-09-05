@@ -1,7 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../models/exam_model.dart';
-import '../../models/question_model.dart';
 import '../../services/firestore_service.dart';
 
 // States
@@ -43,8 +42,8 @@ class ExamListCubit extends Cubit<ExamListState> {
   final FirestoreService _firestoreService;
 
   ExamListCubit({required FirestoreService firestoreService})
-      : _firestoreService = firestoreService,
-        super(const ExamListInitial());
+    : _firestoreService = firestoreService,
+      super(const ExamListInitial());
 
   Future<void> loadExams(String guruId) async {
     emit(const ExamListLoading());
@@ -64,7 +63,11 @@ class ExamListCubit extends Cubit<ExamListState> {
     }
   }
 
-  Future<void> toggleExamStatus(String examId, bool isActive, String guruId) async {
+  Future<void> toggleExamStatus(
+    String examId,
+    bool isActive,
+    String guruId,
+  ) async {
     try {
       await _firestoreService.updateDocument(
         path: FirestoreService.examsPath,
@@ -80,26 +83,7 @@ class ExamListCubit extends Cubit<ExamListState> {
   Future<void> deleteExam(String examId, String guruId) async {
     emit(const ExamListLoading());
     try {
-      // 1. Get all questions in the subcollection
-      final qPath = _firestoreService.questionsPath(examId);
-      final questions = await _firestoreService.getCollection<QuestionModel>(
-        path: qPath,
-        fromJson: (json, id) => QuestionModel.fromJson(json, id: id),
-      );
-
-      // 2. Delete each question document
-      for (final question in questions) {
-        await _firestoreService.deleteDocument(
-          path: qPath,
-          docId: question.id,
-        );
-      }
-
-      // 3. Delete the exam document itself
-      await _firestoreService.deleteDocument(
-        path: FirestoreService.examsPath,
-        docId: examId,
-      );
+      await _firestoreService.call('deleteExam', {'examId': examId});
 
       // 4. Reload exams
       await loadExams(guruId);

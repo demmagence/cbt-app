@@ -64,8 +64,8 @@ class UserManagementCubit extends Cubit<UserManagementState> {
   final FirestoreService _firestoreService;
 
   UserManagementCubit({required FirestoreService firestoreService})
-      : _firestoreService = firestoreService,
-        super(const UserManagementInitial());
+    : _firestoreService = firestoreService,
+      super(const UserManagementInitial());
 
   Future<void> loadUsers() async {
     emit(const UserManagementLoading());
@@ -76,14 +76,19 @@ class UserManagementCubit extends Cubit<UserManagementState> {
       );
 
       // Sort alphabetically by name
-      users.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      users.removeWhere((user) => user.deleted);
+      users.sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+      );
 
-      emit(UserManagementLoaded(
-        allUsers: users,
-        filteredUsers: users,
-        searchQuery: '',
-        roleFilter: 'all',
-      ));
+      emit(
+        UserManagementLoaded(
+          allUsers: users,
+          filteredUsers: users,
+          searchQuery: '',
+          roleFilter: 'all',
+        ),
+      );
     } catch (e) {
       emit(UserManagementError('Gagal memuat pengguna: ${e.toString()}'));
     }
@@ -91,7 +96,9 @@ class UserManagementCubit extends Cubit<UserManagementState> {
 
   void updateFilters({String? search, String? role}) {
     final currentState = state;
-    if (currentState is! UserManagementLoaded) return;
+    if (currentState is! UserManagementLoaded) {
+      return;
+    }
 
     final newSearchQuery = search ?? currentState.searchQuery;
     final newRoleFilter = role ?? currentState.roleFilter;
@@ -102,23 +109,28 @@ class UserManagementCubit extends Cubit<UserManagementState> {
 
       // 2. Search query filter
       final query = newSearchQuery.trim().toLowerCase();
-      final matchesSearch = query.isEmpty ||
+      final matchesSearch =
+          query.isEmpty ||
           user.name.toLowerCase().contains(query) ||
           user.email.toLowerCase().contains(query);
 
       return matchesRole && matchesSearch;
     }).toList();
 
-    emit(currentState.copyWith(
-      filteredUsers: filtered,
-      searchQuery: newSearchQuery,
-      roleFilter: newRoleFilter,
-    ));
+    emit(
+      currentState.copyWith(
+        filteredUsers: filtered,
+        searchQuery: newSearchQuery,
+        roleFilter: newRoleFilter,
+      ),
+    );
   }
 
   Future<void> toggleUserStatus(UserModel user) async {
     final currentState = state;
-    if (currentState is! UserManagementLoaded) return;
+    if (currentState is! UserManagementLoaded) {
+      return;
+    }
 
     try {
       final updatedStatus = !user.isActive;
@@ -137,13 +149,17 @@ class UserManagementCubit extends Cubit<UserManagementState> {
       // Re-apply filters with new lists
       updateFilters();
     } catch (e) {
-      emit(UserManagementError('Gagal mengubah status pengguna: ${e.toString()}'));
+      emit(
+        UserManagementError('Gagal mengubah status pengguna: ${e.toString()}'),
+      );
     }
   }
 
   Future<void> deleteUser(String uid) async {
     final currentState = state;
-    if (currentState is! UserManagementLoaded) return;
+    if (currentState is! UserManagementLoaded) {
+      return;
+    }
 
     try {
       await _firestoreService.deleteDocument(
@@ -152,7 +168,9 @@ class UserManagementCubit extends Cubit<UserManagementState> {
       );
 
       // Update local list
-      final updatedAllUsers = currentState.allUsers.where((u) => u.uid != uid).toList();
+      final updatedAllUsers = currentState.allUsers
+          .where((u) => u.uid != uid)
+          .toList();
 
       emit(currentState.copyWith(allUsers: updatedAllUsers));
       // Re-apply filters with new lists

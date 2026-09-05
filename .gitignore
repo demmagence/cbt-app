@@ -25,7 +25,6 @@ migrate_working_dir/
 
 # Flutter/Dart/Pub related
 **/doc/api/
-**/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins-dependencies
 .pub-cache/
@@ -58,7 +57,6 @@ local.properties
 # Sensitive Firebase Configuration files
 /lib/firebase_options.dart
 /android/app/google-services.json
-/ios/Runner/GoogleService-Info.plist
 
 # Keys, Keystores, and Credentials
 *.keystore
@@ -71,3 +69,12 @@ service-account*.json
 
 # Environment files
 .env*
+
+# Backend dependencies and emulator artifacts
+functions/node_modules/
+*-debug.log
+.firebase/
+
+# Generated local function discovery manifest
+functions/functions.yaml
+android/key.properties

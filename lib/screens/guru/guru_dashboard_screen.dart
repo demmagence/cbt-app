@@ -25,9 +25,9 @@ class GuruDashboardScreen extends StatelessWidget {
     }
 
     return BlocProvider<GuruDashboardCubit>(
-      create: (context) => GuruDashboardCubit(
-        firestoreService: context.read<FirestoreService>(),
-      )..loadDashboardData(guruId),
+      create: (context) =>
+          GuruDashboardCubit(firestoreService: context.read<FirestoreService>())
+            ..loadDashboardData(guruId),
       child: const GuruDashboardView(),
     );
   }
@@ -44,7 +44,9 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
   Future<void> _refreshData() async {
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
-      await context.read<GuruDashboardCubit>().loadDashboardData(authState.user.uid);
+      await context.read<GuruDashboardCubit>().loadDashboardData(
+        authState.user.uid,
+      );
     }
   }
 
@@ -62,7 +64,8 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
         onRefresh: _refreshData,
         child: BlocBuilder<GuruDashboardCubit, GuruDashboardState>(
           builder: (context, state) {
-            if (state is GuruDashboardInitial || state is GuruDashboardLoading) {
+            if (state is GuruDashboardInitial ||
+                state is GuruDashboardLoading) {
               return const LoadingWidget(message: 'Memuat data dashboard...');
             }
 
@@ -105,14 +108,16 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
                     if (state.recentExams.isEmpty)
                       const EmptyStateWidget(
                         title: 'Belum Ada Ujian',
-                        description: 'Silakan buat ujian baru atau import dari bank soal.',
+                        description:
+                            'Silakan buat ujian baru atau import dari bank soal.',
                       )
                     else
                       ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: state.recentExams.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 12),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final exam = state.recentExams[index];
                           return _buildExamCard(exam, theme, context);
@@ -211,9 +216,7 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
     return Card(
       color: color,
       elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -274,7 +277,7 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
                 label: 'Daftar Ujian',
                 icon: Icons.assignment_outlined,
                 color: theme.colorScheme.primary,
-                onTap: () => context.go('/guru/exams'),
+                onTap: () => context.push('/guru/exams'),
               ),
             ),
             const SizedBox(width: 8),
@@ -284,7 +287,7 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
                 label: 'Buat Ujian',
                 icon: Icons.add_box_outlined,
                 color: theme.colorScheme.primary,
-                onTap: () => context.go('/guru/exams/create'),
+                onTap: () => context.push('/guru/exams/create'),
               ),
             ),
             const SizedBox(width: 8),
@@ -294,7 +297,7 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
                 label: 'Bank Soal',
                 icon: Icons.book_outlined,
                 color: theme.colorScheme.secondary,
-                onTap: () => context.go('/guru/question-bank'),
+                onTap: () => context.push('/guru/question-bank'),
               ),
             ),
           ],
@@ -308,7 +311,7 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
                 label: 'Penilaian Essay',
                 icon: Icons.grade_outlined,
                 color: theme.colorScheme.tertiary,
-                onTap: () => context.go('/guru/grading'),
+                onTap: () => context.push('/guru/grading'),
               ),
             ),
             const SizedBox(width: 8),
@@ -318,7 +321,7 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
                 label: 'Monitoring Sesi',
                 icon: Icons.live_tv_outlined,
                 color: Colors.orange,
-                onTap: () => context.go('/guru/monitoring'),
+                onTap: () => context.push('/guru/monitoring'),
               ),
             ),
           ],
@@ -388,7 +391,9 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
       statusText = 'Aktif';
     }
 
-    final formattedStartDate = DateFormat('dd MMM yyyy, HH:mm').format(exam.startDate);
+    final formattedStartDate = DateFormat(
+      'dd MMM yyyy, HH:mm',
+    ).format(exam.startDate);
 
     return Card(
       elevation: 0,
@@ -397,7 +402,7 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
         side: BorderSide(color: theme.colorScheme.outlineVariant),
       ),
       child: InkWell(
-        onTap: () => context.go('/guru/exams/${exam.id}/edit'),
+        onTap: () => context.push('/guru/exams/${exam.id}/edit'),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -420,7 +425,10 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -444,7 +452,11 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
               // Row 2: Code and Info
               Row(
                 children: [
-                  Icon(Icons.vpn_key_outlined, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.vpn_key_outlined,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     'Kode: ${exam.code}',
@@ -461,13 +473,19 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: exam.code));
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Kode ujian disalin ke clipboard!')),
+                        const SnackBar(
+                          content: Text('Kode ujian disalin ke clipboard!'),
+                        ),
                       );
                     },
                     tooltip: 'Salin Kode',
                   ),
                   const Spacer(),
-                  Icon(Icons.schedule, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.schedule,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     '${exam.duration} mnt',
@@ -476,7 +494,11 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Icon(Icons.help_outline, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.help_outline,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     '${exam.totalQuestions} soal',
@@ -491,7 +513,11 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
               // Row 3: Schedule Date
               Row(
                 children: [
-                  Icon(Icons.calendar_today_outlined, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     'Mulai: $formattedStartDate',
@@ -500,7 +526,11 @@ class _GuruDashboardViewState extends State<GuruDashboardView> {
                     ),
                   ),
                   const Spacer(),
-                  Icon(Icons.arrow_forward_ios, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 14,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ],
               ),
             ],

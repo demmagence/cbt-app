@@ -56,15 +56,15 @@ class AdminStatisticsLoaded extends AdminStatisticsState {
 
   @override
   List<Object?> get props => [
-        examsPerMonth,
-        activeStudentsPerMonth,
-        topGurus,
-        averageScore,
-        activeExamsCount,
-        scheduledExamsCount,
-        endedExamsCount,
-        totalExamsCount,
-      ];
+    examsPerMonth,
+    activeStudentsPerMonth,
+    topGurus,
+    averageScore,
+    activeExamsCount,
+    scheduledExamsCount,
+    endedExamsCount,
+    totalExamsCount,
+  ];
 }
 
 class AdminStatisticsError extends AdminStatisticsState {
@@ -81,8 +81,8 @@ class AdminStatisticsCubit extends Cubit<AdminStatisticsState> {
   final FirestoreService _firestoreService;
 
   AdminStatisticsCubit({required FirestoreService firestoreService})
-      : _firestoreService = firestoreService,
-        super(const AdminStatisticsInitial());
+    : _firestoreService = firestoreService,
+      super(const AdminStatisticsInitial());
 
   Future<void> loadStatistics() async {
     emit(const AdminStatisticsLoading());
@@ -109,10 +109,15 @@ class AdminStatisticsCubit extends Cubit<AdminStatisticsState> {
 
       // 2. Average Score calculation
       double totalScoresSum = 0;
-      for (final result in examResults) {
+      final gradedResults = examResults
+          .where((r) => r.gradingStatus == 'graded')
+          .toList();
+      for (final result in gradedResults) {
         totalScoresSum += result.totalScore.toDouble();
       }
-      final averageScore = examResults.isEmpty ? 0.0 : totalScoresSum / examResults.length;
+      final averageScore = gradedResults.isEmpty
+          ? 0.0
+          : totalScoresSum / gradedResults.length;
 
       // 3. Exam Status Distribution calculation
       final now = DateTime.now();
@@ -136,7 +141,8 @@ class AdminStatisticsCubit extends Cubit<AdminStatisticsState> {
       // 4. Group data by month for the last 6 months
       final last6MonthsKeys = <String>[];
       final examsPerMonth = <String, int>{};
-      final activeStudentsPerMonth = <String, Set<String>>{}; // Using Set to count unique userIds
+      final activeStudentsPerMonth =
+          <String, Set<String>>{}; // Using Set to count unique userIds
 
       // Initialize keys for the last 6 months
       for (int i = 5; i >= 0; i--) {
@@ -163,7 +169,8 @@ class AdminStatisticsCubit extends Cubit<AdminStatisticsState> {
 
       // 5. Top 5 Guru by exam counts
       final userMap = {for (var u in users) u.uid: u.name};
-      final guruExamsCountMap = <String, int>{}; // Key: createdBy (uid), Value: count
+      final guruExamsCountMap =
+          <String, int>{}; // Key: createdBy (uid), Value: count
 
       for (final exam in exams) {
         final creatorId = exam.createdBy;
@@ -179,18 +186,22 @@ class AdminStatisticsCubit extends Cubit<AdminStatisticsState> {
       topGurus.sort((a, b) => b.count.compareTo(a.count));
       final finalTopGurus = topGurus.take(5).toList();
 
-      emit(AdminStatisticsLoaded(
-        examsPerMonth: examsPerMonth,
-        activeStudentsPerMonth: finalActiveStudentsPerMonth,
-        topGurus: finalTopGurus,
-        averageScore: averageScore,
-        activeExamsCount: activeExamsCount,
-        scheduledExamsCount: scheduledExamsCount,
-        endedExamsCount: endedExamsCount,
-        totalExamsCount: totalExamsCount,
-      ));
+      emit(
+        AdminStatisticsLoaded(
+          examsPerMonth: examsPerMonth,
+          activeStudentsPerMonth: finalActiveStudentsPerMonth,
+          topGurus: finalTopGurus,
+          averageScore: averageScore,
+          activeExamsCount: activeExamsCount,
+          scheduledExamsCount: scheduledExamsCount,
+          endedExamsCount: endedExamsCount,
+          totalExamsCount: totalExamsCount,
+        ),
+      );
     } catch (e) {
-      emit(AdminStatisticsError('Gagal memuat data statistik: ${e.toString()}'));
+      emit(
+        AdminStatisticsError('Gagal memuat data statistik: ${e.toString()}'),
+      );
     }
   }
 }

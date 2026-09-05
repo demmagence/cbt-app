@@ -42,8 +42,8 @@ class QuestionBankCubit extends Cubit<QuestionBankState> {
   final FirestoreService _firestoreService;
 
   QuestionBankCubit({required FirestoreService firestoreService})
-      : _firestoreService = firestoreService,
-        super(const QuestionBankInitial());
+    : _firestoreService = firestoreService,
+      super(const QuestionBankInitial());
 
   Future<void> loadQuestions(String guruId) async {
     emit(const QuestionBankLoading());
@@ -55,7 +55,9 @@ class QuestionBankCubit extends Cubit<QuestionBankState> {
       );
 
       // Sort by order/text/creation
-      questions.sort((a, b) => a.text.toLowerCase().compareTo(b.text.toLowerCase()));
+      questions.sort(
+        (a, b) => a.text.toLowerCase().compareTo(b.text.toLowerCase()),
+      );
 
       emit(QuestionBankLoaded(questions));
     } catch (e) {
@@ -66,11 +68,7 @@ class QuestionBankCubit extends Cubit<QuestionBankState> {
   Future<void> addQuestion(String guruId, QuestionModel question) async {
     emit(const QuestionBankLoading());
     try {
-      final data = {
-        ...question.toJson(),
-        'createdBy': guruId,
-        'createdAt': DateTime.now().toIso8601String(),
-      };
+      final data = {...question.toJson(), 'createdBy': guruId};
 
       await _firestoreService.addDocument(
         path: FirestoreService.questionBankPath,
@@ -80,22 +78,30 @@ class QuestionBankCubit extends Cubit<QuestionBankState> {
 
       await loadQuestions(guruId);
     } catch (e) {
-      emit(QuestionBankError('Gagal menambahkan soal ke bank soal: ${e.toString()}'));
+      emit(
+        QuestionBankError(
+          'Gagal menambahkan soal ke bank soal: ${e.toString()}',
+        ),
+      );
     }
   }
 
   Future<void> updateQuestion(String guruId, QuestionModel question) async {
     emit(const QuestionBankLoading());
     try {
-      await _firestoreService.updateDocument(
+      await _firestoreService.addDocument(
         path: FirestoreService.questionBankPath,
         docId: question.id,
-        data: question.toJson(),
+        data: {...question.toJson(), 'createdBy': guruId},
       );
 
       await loadQuestions(guruId);
     } catch (e) {
-      emit(QuestionBankError('Gagal memperbarui soal di bank soal: ${e.toString()}'));
+      emit(
+        QuestionBankError(
+          'Gagal memperbarui soal di bank soal: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -109,7 +115,11 @@ class QuestionBankCubit extends Cubit<QuestionBankState> {
 
       await loadQuestions(guruId);
     } catch (e) {
-      emit(QuestionBankError('Gagal menghapus soal dari bank soal: ${e.toString()}'));
+      emit(
+        QuestionBankError(
+          'Gagal menghapus soal dari bank soal: ${e.toString()}',
+        ),
+      );
     }
   }
 }
