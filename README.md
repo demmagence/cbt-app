@@ -129,9 +129,3 @@ firebase.json        Konfigurasi Firebase
 firestore.rules      Aturan akses Firestore
 firestore.indexes.json
 ```
-
-## Status Produksi
-
-Aplikasi telah menghasilkan APK release bertanda tangan dan lulus pengujian lokal. Aplikasi belum boleh digunakan untuk ujian produksi karena Cloud Functions dan Cloud Scheduler belum diterapkan pada proyek Firebase.
-
-Deployment backend memerlukan paket Firebase Blaze dengan akun billing. Migrasi data produksi hanya boleh dijalankan setelah backup Firestore, seluruh ujian aktif selesai, dan hasil pratinjau migrasi diperiksa.
